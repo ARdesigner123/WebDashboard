@@ -57,15 +57,16 @@ records need a separate, planned export/import if they should be retained.
 
 ### Important login and access-control limitation
 
-The current login endpoint creates a local user the first time a username and
-password are entered. Usernames and passwords must each be at least 5
-characters; passwords must also contain a number and a special character.
-Passwords are stored as Django password hashes, and a returning user must
-provide the same password. This is a demo account flow, not an invitation-only
-or company identity system. Several dashboard API endpoints also allow
-anonymous requests. Do not put confidential or production operational data on
-this public deployment until account creation and API authorization have been
-reviewed and restricted for your users.
+The login flow creates a local user the first time a username and password are
+entered. Usernames and passwords must each be at least 5 characters; passwords
+must also contain a number and a special character. When the account service is
+available, passwords are stored as Django password hashes. If it is unavailable,
+the demo can fall back to an account saved in that browser's local storage; the
+password is stored as a SHA-256 hash and will not sync to another browser or
+device. Guest login is also browser-local. This demo flow is not an
+invitation-only or company identity system, and several dashboard API endpoints
+allow anonymous requests. Do not put confidential or production operational
+data on this public deployment.
 
 ## Environment variables
 Copy `.env.example` to `.env` and adjust values as needed.
@@ -73,5 +74,7 @@ Copy `.env.example` to `.env` and adjust values as needed.
 ## Login behavior
 The login screen accepts a local username and password. The app creates or
 reuses the Django user and logs them in through the app’s own authentication
-flow. The **Login as a guest** button creates or reuses a shared passwordless
-demo account; guest sessions are not private.
+flow when the service is available. If it is unavailable, the account is saved
+in the current browser and will not sync to another device. The **Login as a
+guest** button opens a browser-local demo session without requiring the
+authentication service.

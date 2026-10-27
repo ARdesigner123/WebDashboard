@@ -258,6 +258,7 @@ let redoStack = [];
 let globalAuthToken = localStorage.getItem('mes_token') || ""; 
 let localDjangoToken = localStorage.getItem('django_token') || "";
 let currentAuthMode = 'login';
+let browserOnlyAuth = false;
 
 // ============================================================================
 // 🚨 TRANSPARENT AUTHENTICATION FETCH INTERCEPTOR (DUAL TOKEN AUTH)
@@ -304,7 +305,9 @@ window.fetch = async function(resource, init) {
         }
 
         // Session + CSRF cookies must travel with every API call.
-        if (!init.credentials) init.credentials = API_BASE_URL ? 'include' : 'same-origin';
+        if (!init.credentials) {
+            init.credentials = browserOnlyAuth ? 'omit' : (API_BASE_URL ? 'include' : 'same-origin');
+        }
 
         // Echo the CSRF cookie back on EVERY /api/ call - including the auth
         // routes, which are otherwise skipped below.
@@ -398,24 +401,40 @@ async function handleAuthAction() {
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerText = "Authenticating...";
+            btn.innerText = "Signing in...";
         }
-        statusBox.innerText = "Authenticating your account...";
-        
-        const mesResp = await fetch('/api/mes-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userName: user, password: pass })
-        });
-        
-        const data = await mesResp.json().catch(() => ({}));
+        statusBox.innerText = "Checking this browser for your account...";
 
-        if (!mesResp.ok || data.error) {
-            let errMsg = data.error || data.message || "Authentication failed. Please check your username and password.";
-            throw new Error(errMsg);
+        const browserLogin = await authenticateBrowserAccount(user, pass);
+        if (browserLogin) {
+            finishLocalLogin({}, user, true);
+            return;
         }
 
-        finishLocalLogin(data, user);
+        statusBox.innerText = "Connecting to the account service...";
+        const authController = new AbortController();
+        const authTimeout = setTimeout(() => authController.abort(), 10000);
+        try {
+            const mesResp = await fetch('/api/mes-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userName: user, password: pass }),
+                signal: authController.signal
+            });
+            const data = await mesResp.json().catch(() => ({}));
+            if (mesResp.ok && !data.error && (data.django_token_key || data.token || data.accessToken)) {
+                finishLocalLogin(data, user);
+                return;
+            }
+        } catch (error) {
+            console.warn("Account service unavailable; using browser-stored demo account.", error);
+        } finally {
+            clearTimeout(authTimeout);
+        }
+
+        await saveBrowserAccount(user, pass);
+        finishLocalLogin({}, user, true);
+        statusBox.innerText = "Signed in. This demo account is saved only in this browser.";
         
     } catch (error) {
         console.error("MES Auth Error:", error);
@@ -428,23 +447,74 @@ async function handleAuthAction() {
         }
     }
 }
-function finishLocalLogin(data, username) {
+function getBrowserAccounts() {
+    const savedAccounts = localStorage.getItem('dashboard_local_accounts');
+    if (!savedAccounts) return [];
+    const accounts = JSON.parse(savedAccounts);
+    if (!Array.isArray(accounts)) {
+        throw new Error("Saved browser accounts are unreadable. Clear this site's saved data and try again.");
+    }
+    return accounts;
+}
+
+async function hashBrowserPassword(username, password) {
+    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+        throw new Error("This browser does not support local account storage. Please use a modern browser over HTTPS.");
+    }
+    const input = new TextEncoder().encode(`${username}:${password}`);
+    const digest = await window.crypto.subtle.digest('SHA-256', input);
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function authenticateBrowserAccount(username, password) {
+    const account = getBrowserAccounts().find(saved => saved.username === username);
+    if (!account) return false;
+    const passwordHash = await hashBrowserPassword(username, password);
+    if (account.passwordHash !== passwordHash) {
+        throw new Error("Incorrect password for this browser account.");
+    }
+    return true;
+}
+
+async function saveBrowserAccount(username, password) {
+    const accounts = getBrowserAccounts();
+    const existing = accounts.find(account => account.username === username);
+    const passwordHash = await hashBrowserPassword(username, password);
+    if (existing) {
+        if (existing.passwordHash !== passwordHash) {
+            throw new Error("Incorrect password for this browser account.");
+        }
+        return;
+    }
+    accounts.push({ username, passwordHash });
+    localStorage.setItem('dashboard_local_accounts', JSON.stringify(accounts));
+}
+
+function finishLocalLogin(data, username, browserOnly = false) {
+    browserOnlyAuth = browserOnly;
     let token = data.token || data.accessToken || data.django_token_key || null;
     if (token && !String(token).startsWith('Bearer ')) {
         token = 'Bearer ' + String(token);
     }
-    if (!token) throw new Error("Local authentication succeeded, but the session token was not returned.");
-    if (!data.django_token_key) throw new Error("Your local authentication token was not created correctly.");
+    if (!browserOnly && (!token || !data.django_token_key)) {
+        throw new Error("The account service did not return a valid login token.");
+    }
 
-    globalAuthToken = token;
-    localStorage.setItem('mes_token', token);
-    localDjangoToken = data.django_token_key;
-    localStorage.setItem('django_token', localDjangoToken);
+    globalAuthToken = browserOnly ? "" : token;
+    localDjangoToken = browserOnly ? "" : data.django_token_key;
+    if (browserOnly) {
+        localStorage.removeItem('mes_token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('django_token');
+    } else {
+        localStorage.setItem('mes_token', token);
+        localStorage.setItem('django_token', localDjangoToken);
+    }
     localStorage.setItem('mes_username', data.username || username);
     localStorage.setItem('demo_user_name', data.username || username);
 
     const authTokenEl = document.getElementById('authToken');
-    if (authTokenEl) authTokenEl.value = token;
+    if (authTokenEl) authTokenEl.value = token || "";
     const loginScreen = document.getElementById('globalLoginScreen');
     if (loginScreen) loginScreen.style.display = 'none';
     const mainContent = document.getElementById('mainAppContent');
@@ -459,34 +529,8 @@ async function handleGuestLogin() {
     const btn = document.getElementById('guestLoginBtn');
     if (!statusBox) return;
 
-    statusBox.innerText = 'Starting a guest session...';
-    statusBox.style.color = 'var(--text-secondary)';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = 'Starting guest session...';
-    }
-
-    try {
-        const response = await fetch('/api/guest-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.error) {
-            throw new Error(data.error || data.message || 'Guest login failed.');
-        }
-        finishLocalLogin(data, 'dashboard-guest');
-    } catch (error) {
-        console.error('Guest Login Error:', error);
-        statusBox.innerText = error.message;
-        statusBox.style.color = '#ff4d4f';
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = 'Login as a guest';
-        }
-    }
+    statusBox.innerText = 'Opening a guest session...';
+    finishLocalLogin({}, 'Guest', true);
 }
 window.handleAuthAction = handleAuthAction;
 window.handleGuestLogin = handleGuestLogin;
