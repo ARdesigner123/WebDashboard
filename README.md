@@ -57,12 +57,15 @@ records need a separate, planned export/import if they should be retained.
 
 ### Important login and access-control limitation
 
-The current login endpoint creates a new local user the first time any username
-and password are entered. It is a demo account flow, not an invitation-only or
-company identity system. Several dashboard API endpoints also allow anonymous
-requests. Do not put confidential or production operational data on this public
-deployment until account creation and API authorization have been reviewed and
-restricted for your users.
+The current login endpoint creates a local user the first time a username and
+password are entered. Usernames and passwords must each be at least 5
+characters; passwords must also contain a number and a special character.
+Passwords are stored as Django password hashes, and a returning user must
+provide the same password. This is a demo account flow, not an invitation-only
+or company identity system. Several dashboard API endpoints also allow
+anonymous requests. Do not put confidential or production operational data on
+this public deployment until account creation and API authorization have been
+reviewed and restricted for your users.
 
 ## Environment variables
 Copy `.env.example` to `.env` and adjust values as needed.

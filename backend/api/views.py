@@ -3,6 +3,7 @@ import re
 import io
 import json
 import logging
+import random
 import requests
 import urllib3
 import openpyxl
@@ -53,7 +54,10 @@ def serve_index(request):
 
 def _demo_rows(requested_wo=None, requested_pn=None, count=4):
     requested_wo = str(requested_wo or 'WO-1001').strip() or 'WO-1001'
-    requested_pn = str(requested_pn or 'PN-2001').strip() or 'PN-2001'
+    requested_pn = str(requested_pn or '').strip()
+    rng = random.Random(requested_wo)
+    if not requested_pn:
+        requested_pn = f'PN-{rng.randint(1000, 9999)}'
     rows = []
     statuses = ['In Progress', 'Completed', 'Queued', 'Hold']
     lines = ['WH', 'BB', 'SI']
@@ -61,6 +65,7 @@ def _demo_rows(requested_wo=None, requested_pn=None, count=4):
     for index in range(count):
         wo_name = requested_wo if index == 0 else f"{requested_wo}-{index + 1}"
         pn_name = requested_pn if index == 0 else f"{requested_pn}-{index + 1}"
+        planned_start = datetime.now().date() - timedelta(days=rng.randint(0, 30))
         rows.append({
             'TopMfgOrderName': wo_name,
             'FatherMfgOrderName': wo_name,
@@ -71,20 +76,27 @@ def _demo_rows(requested_wo=None, requested_pn=None, count=4):
             'ProductName': pn_name,
             'productName': pn_name,
             'CustomerProduct': pn_name,
+            'CustomerName': f'Demo Customer {rng.randint(1, 12)}',
             'ContainerStatus': statuses[index % len(statuses)],
             'SpecName': 'Line WH' if lines[index % len(lines)] == 'WH' else 'Assembly Demo',
             'MfgLineName': lines[index % len(lines)],
             'mfgLineName': lines[index % len(lines)],
             'WorkflowName': 'Demo Workflow',
             'workflowName': 'Demo Workflow',
+            'TaskListName': f'Demo Task {index + 1}',
             'Factory': 'Demo Factory',
             'DataNo': str(1000 + index),
-            'Qty': 25 + (index * 10),
+            'OrderQty': rng.randint(10, 250),
+            'Qty': rng.randint(10, 250),
             'CompletedQty': 10 + index * 5,
+            'ManTime': round(rng.uniform(1, 30), 2),
+            'PlannedStartDate': planned_start.isoformat(),
+            'PlannedCompletionDate': (planned_start + timedelta(days=rng.randint(1, 21))).isoformat(),
+            'TraverlerCard': f'TC-{rng.randint(10000, 99999)}',
             'Location': 'Demo Line A',
             'ContainerName': f'CTN-{1000 + index}',
-            'StartDate': '2026-10-26',
-            'EndDate': '2026-10-30',
+            'StartDate': planned_start.isoformat(),
+            'EndDate': (planned_start + timedelta(days=4)).isoformat(),
         })
     return rows
 
@@ -100,13 +112,23 @@ def mes_login(request):
         username = str(request.data.get('userName') or request.data.get('username') or '').strip()
         password = str(request.data.get('password') or request.data.get('pass') or '').strip()
 
-        if not username or not password:
-            return JsonResponse({'error': 'Username and password are required'}, status=400)
+        if len(username) < 5:
+            return JsonResponse({'error': 'Username must be at least 5 characters long.'}, status=400)
+        if len(password) < 5:
+            return JsonResponse({'error': 'Password must be at least 5 characters long.'}, status=400)
+        if not re.search(r'\d', password):
+            return JsonResponse({'error': 'Password must include at least one number.'}, status=400)
+        if not re.search(r'[^A-Za-z0-9]', password):
+            return JsonResponse({'error': 'Password must include at least one special character.'}, status=400)
 
         User = get_user_model()
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user and not existing_user.check_password(password):
+            return JsonResponse({'error': 'Incorrect password for this username.'}, status=401)
+
         user = None
-        if User.objects.filter(username=username).exists():
-            user = User.objects.get(username=username)
+        if existing_user:
+            user = existing_user
             if user.check_password(password):
                 user = authenticate(request, username=username, password=password)
             else:
@@ -547,7 +569,7 @@ def mes_proxy(request):
                 payload = {}
 
         requested_wo = str(payload.get('mfgOrder') or payload.get('MfgOrderName') or payload.get('wo') or 'WO-1001').strip()
-        requested_pn = str(payload.get('ProductName') or payload.get('productName') or 'PN-2001').strip()
+        requested_pn = str(payload.get('ProductName') or payload.get('productName') or '').strip()
         rows = _demo_rows(requested_wo=requested_wo, requested_pn=requested_pn, count=4)
 
         if requested_wo and requested_wo.lower() != 'all':
@@ -756,4 +778,3 @@ def assembly_live_query(request):
         'RTDAT': rows,
         'total': len(rows),
     })
-

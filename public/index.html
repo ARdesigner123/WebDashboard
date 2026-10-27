@@ -39,7 +39,7 @@
                     <label class="auth-label">Username</label>
                     <div class="auth-input-wrapper">
                         <span class="auth-input-icon">👤</span>
-                        <input type="text" id="mesUser" class="auth-input" placeholder="Enter your username">
+                        <input type="text" id="mesUser" class="auth-input" placeholder="Enter your username" minlength="5" required autocomplete="username">
                     </div>
                 </div>
                 
@@ -47,8 +47,9 @@
                     <label class="auth-label">Password</label>
                     <div class="auth-input-wrapper">
                         <span class="auth-input-icon">🔒</span>
-                        <input type="password" id="mesPass" class="auth-input" placeholder="Enter your password" onkeypress="if(event.key === 'Enter') handleAuthAction()">
+                        <input type="password" id="mesPass" class="auth-input" placeholder="Enter your password" minlength="5" required autocomplete="current-password" onkeypress="if(event.key === 'Enter') handleAuthAction()">
                     </div>
+                    <small class="auth-subtitle">Use at least 5 characters for both fields. Passwords also need a number and a special character.</small>
                 </div>
                 
                 <button id="loginBtn" class="auth-btn" onclick="handleAuthAction()">

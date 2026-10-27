@@ -374,8 +374,23 @@ async function handleAuthAction() {
     const pass = document.getElementById('mesPass').value.trim();
     const btn = document.getElementById('loginBtn');
     
-    if (!user || !pass) {
-        statusBox.innerText = "Please enter your username and password.";
+    if (user.length < 5) {
+        statusBox.innerText = "Username must be at least 5 characters long.";
+        statusBox.style.color = "#ff4d4f";
+        return;
+    }
+    if (pass.length < 5) {
+        statusBox.innerText = "Password must be at least 5 characters long.";
+        statusBox.style.color = "#ff4d4f";
+        return;
+    }
+    if (!/\d/.test(pass)) {
+        statusBox.innerText = "Password must include at least one number.";
+        statusBox.style.color = "#ff4d4f";
+        return;
+    }
+    if (!/[^A-Za-z0-9]/.test(pass)) {
+        statusBox.innerText = "Password must include at least one special character.";
         statusBox.style.color = "#ff4d4f";
         return;
     }
@@ -421,6 +436,8 @@ async function handleAuthAction() {
         } else {
             throw new Error("Your local authentication token was not created correctly.");
         }
+        localStorage.setItem('mes_username', data.username || user);
+        localStorage.setItem('demo_user_name', data.username || user);
         
         const loginScreen = document.getElementById('globalLoginScreen');
         if (loginScreen) loginScreen.style.display = 'none';
