@@ -7,9 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./static/style.css?v=6.3">
+    <link rel="stylesheet" href="./static/style.css?v=6.4">
     <script src="./static/backend-config.js"></script>
-    <script src="./static/script.js?v=12.3"></script>
+    <script src="./static/script.js?v=12.4"></script>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f8fafc;">
 
@@ -86,8 +86,9 @@
             
             <div style="display: flex; align-items: center; gap: 8px; position: relative;">
                 <div class="search-container" id="globalSearch">
-                    <input type="text" id="searchInput" placeholder="Search Multiple WOs..." style="width: 150px;" onkeypress="handleSearchEnter(event)">
-                    <button class="btn-primary" onclick="searchContainer()">Search</button>
+                    <input type="text" id="searchInput" placeholder="Add WOs / part numbers..." style="width: 190px;" onkeypress="handleSearchEnter(event)">
+                    <button id="btnSearchWOs" class="btn-primary" onclick="searchContainer()">Search</button>
+                    <button id="btnAddDemoWOs" class="btn-add-demo" onclick="addDemoWOsToRack()">+ Add demo data</button>
                 </div>
             </div>
         </div>
@@ -98,7 +99,10 @@
                 <div class="left-panel">
                     <div class="table-container">
                         <div class="table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box;">
-                            <h3 style="margin: 0; font-size: 14px; white-space: nowrap;">WH WO Status</h3>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 14px; white-space: nowrap;">WH WO Status</h3>
+                                <span class="demo-data-badge">SAMPLE DATA READY</span>
+                            </div>
                             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto;">
                                 <button id="btnSyncPlaceholder" class="btn-small" onclick="syncAllToPlaceholder()" style="background-color: #2db7f5; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Copy & paste all WOs to Placeholder sheet tab">📋 Placeholder</button>
                                 <button id="btnSyncWhSummary" class="btn-small" onclick="syncAllToRespectiveTabs()" style="background-color: #52c41a; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Copy & paste each WO data to its own WO sheet tab">📊 WH Summary</button>

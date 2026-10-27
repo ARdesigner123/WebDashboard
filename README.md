@@ -78,3 +78,8 @@ flow when the service is available. If it is unavailable, the account is saved
 in the current browser and will not sync to another device. The **Login as a
 guest** button opens a browser-local demo session without requiring the
 authentication service.
+
+The WH WO Status list supports adding demo work orders and part numbers
+directly. Demo records include generated quantities, customers, dates,
+traveler cards, and work across WH, BB, and SI lines so the summary, category
+pivots, and chart work without a connected MES database.

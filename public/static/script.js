@@ -21,9 +21,9 @@ let lastLocalWOUpdateTimestamp = Date.now();
 let currentSearchMode = 'wo';
 
 try {
-    const localSavedWo = localStorage.getItem('bizlink_urgent_wos_wo') || localStorage.getItem('bizlink_urgent_wos');
+    const localSavedWo = localStorage.getItem('demo_urgent_wos_wo') || localStorage.getItem('bizlink_urgent_wos_wo') || localStorage.getItem('bizlink_urgent_wos');
     if (localSavedWo !== null) urgentWOs_wo = JSON.parse(localSavedWo);
-    const localSavedPn = localStorage.getItem('bizlink_urgent_wos_pn');
+    const localSavedPn = localStorage.getItem('demo_urgent_wos_pn') || localStorage.getItem('bizlink_urgent_wos_pn');
     if (localSavedPn !== null) urgentWOs_pn = JSON.parse(localSavedPn);
 } catch(e) {}
 
@@ -111,6 +111,91 @@ function selectRowsForWO(rawRows, wo) {
     return rawRows.filter(r => isMatchingWORow(r, wo));
 }
 
+function hashDemoSeed(value) {
+    let hash = 2166136261;
+    for (const char of String(value)) {
+        hash ^= char.charCodeAt(0);
+        hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+}
+
+function createDemoRowsForWO(wo, requestedPN = '') {
+    let seed = hashDemoSeed(wo);
+    const random = () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 4294967296;
+    };
+    const pn = requestedPN || `PN-${1000 + Math.floor(random() * 9000)}`;
+    const lines = [
+        { name: '3070_WH', specs: ['Line WH', 'Receiving & Inspection', 'Warehouse Prep', 'Final Packing'] },
+        { name: '3070_BB', specs: ['Board Build', 'PCB Assembly', 'SMT Placement', 'Board Inspection'] },
+        { name: '3070_SI', specs: ['System Integration', 'Firmware Load', 'Functional Test', 'Final QA'] }
+    ];
+    const statuses = ['In Progress', 'Completed', 'Queued', 'Hold'];
+    const today = new Date();
+    const dateOnly = date => [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+    ].join('-');
+
+    return Array.from({ length: 12 }, (_, index) => {
+        const line = lines[index % lines.length];
+        const start = new Date(today);
+        start.setDate(start.getDate() - Math.floor(random() * 30));
+        const completion = new Date(start);
+        completion.setDate(completion.getDate() + 1 + Math.floor(random() * 20));
+        const qty = 20 + Math.floor(random() * 231);
+        const orderName = `${wo}-${String(index + 1).padStart(2, '0')}`;
+        return {
+            TopMfgOrderName: wo,
+            FatherMfgOrderName: wo,
+            MfgOrderName: wo,
+            mfgOrder: wo,
+            WorkOrder: wo,
+            workOrder: wo,
+            ProductName: pn,
+            productName: pn,
+            CustomerProduct: pn,
+            CustomerName: `Demo Customer ${1 + Math.floor(random() * 12)}`,
+            ContainerStatus: statuses[index % statuses.length],
+            SpecName: line.specs[Math.floor(index / lines.length)],
+            MfgLineName: line.name,
+            mfgLineName: line.name,
+            WorkflowName: `${line.name.slice(-2)} Demo Workflow`,
+            workflowName: `${line.name.slice(-2)} Demo Workflow`,
+            TaskListName: `Demo Task ${index + 1}`,
+            OrderQty: qty,
+            Qty: qty,
+            CompletedQty: Math.floor(qty * random()),
+            ManTime: Number((1 + random() * 30).toFixed(2)),
+            PlannedStartDate: dateOnly(start),
+            PlannedCompletionDate: dateOnly(completion),
+            TraverlerCard: `TC-${10000 + Math.floor(random() * 90000)}`,
+            ContainerName: `CTN-${hashDemoSeed(`${orderName}-${index}`)}`,
+            DataNo: String(10000 + Math.floor(random() * 90000))
+        };
+    });
+}
+
+function cacheDemoRowsForWO(wo, requestedPN = '') {
+    if (!globalDataCache[wo] || globalDataCache[wo].length === 0) {
+        globalDataCache[wo] = createDemoRowsForWO(wo, requestedPN);
+    }
+    const rows = globalDataCache[wo];
+    if (rows[0] && rows[0].ProductName) productDesCache[wo] = rows[0].ProductName;
+    const completion = calculateWOCompletion(wo, activeLines);
+    totalWHCache[wo] = completion.total;
+    completedWHCache[wo] = completion.completed;
+    pctCache[wo] = completion.pctStr;
+    return rows;
+}
+
+function demoWOForPartNumber(partNumber) {
+    return `WO-${100000 + (hashDemoSeed(partNumber) % 900000)}`;
+}
+
 function isLineWH(row) {
     if (!row) return false;
     const specNameRaw = String(row.SpecName || row.specName || row.specname || row.SPECNAME || "");
@@ -152,6 +237,16 @@ function getRowLineCategory(row) {
     }
 
     return "WH"; // Default fallback
+}
+
+function matchesSelectedSubLine(row, selectedSubLines) {
+    if (!selectedSubLines.length) return true;
+    const rowLine = String(row.MfgLineName || row.mfgLineName || '').toUpperCase().trim();
+    const category = getRowLineCategory(row);
+    return selectedSubLines.some(filter => {
+        const selected = String(filter || '').toUpperCase().trim();
+        return selected === rowLine || selected === category || selected.endsWith(`_${category}`);
+    });
 }
 
 function rowMatchesLine(row, line) {
@@ -259,6 +354,16 @@ let globalAuthToken = localStorage.getItem('mes_token') || "";
 let localDjangoToken = localStorage.getItem('django_token') || "";
 let currentAuthMode = 'login';
 let browserOnlyAuth = false;
+let localRackMode = localStorage.getItem('dashboard_local_rack_mode') === 'true';
+
+function updateDemoModeControls() {
+    const placeholder = document.getElementById('btnSyncPlaceholder');
+    const summary = document.getElementById('btnSyncWhSummary');
+    const autoUpdate = document.getElementById('placeholderAutoUpdateSelect');
+    if (placeholder) placeholder.style.display = localRackMode ? 'none' : 'inline-flex';
+    if (summary) summary.style.display = localRackMode ? 'none' : 'inline-flex';
+    if (autoUpdate) autoUpdate.style.display = localRackMode ? 'none' : 'inline-block';
+}
 
 // ============================================================================
 // 🚨 TRANSPARENT AUTHENTICATION FETCH INTERCEPTOR (DUAL TOKEN AUTH)
@@ -506,10 +611,21 @@ function finishLocalLogin(data, username, browserOnly = false) {
         localStorage.removeItem('mes_token');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('django_token');
+        localRackMode = true;
+        localStorage.setItem('dashboard_local_rack_mode', 'true');
+        if (urgentWOs.length === 0) {
+            urgentWOs = ['WO-1001', 'WO-1002', 'WO-1003'];
+            saveUrgentWOsToStorage();
+        }
+        if (urgentWOs_pn.length === 0) {
+            urgentWOs_pn = ['WO-2001', 'WO-2002'];
+            localStorage.setItem('demo_urgent_wos_pn', JSON.stringify(urgentWOs_pn));
+        }
     } else {
         localStorage.setItem('mes_token', token);
         localStorage.setItem('django_token', localDjangoToken);
     }
+    updateDemoModeControls();
     localStorage.setItem('mes_username', data.username || username);
     localStorage.setItem('demo_user_name', data.username || username);
 
@@ -809,7 +925,7 @@ function applyTabContent(tabId, keepVisible) {
         currentSearchMode = 'wo';
         if (document.getElementById('tab-wo')) document.getElementById('tab-wo').classList.add('active');
         const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.placeholder = "Search Multiple WOs...";
+        if (searchInput) searchInput.placeholder = "Add work orders...";
         document.getElementById('view-shared-wo').style.display = 'flex';
         document.getElementById('panel-wo-summary').style.display = 'flex';
         document.getElementById('globalSearch').style.visibility = 'visible';
@@ -817,9 +933,9 @@ function applyTabContent(tabId, keepVisible) {
         const btnPlaceholder = document.getElementById('btnSyncPlaceholder');
         const btnWhSummary = document.getElementById('btnSyncWhSummary');
         const autoUpdateSelect = document.getElementById('placeholderAutoUpdateSelect');
-        if (btnPlaceholder) btnPlaceholder.style.display = 'inline-flex';
-        if (btnWhSummary) btnWhSummary.style.display = 'inline-flex';
-        if (autoUpdateSelect) autoUpdateSelect.style.display = 'inline-block';
+        if (btnPlaceholder) btnPlaceholder.style.display = localRackMode ? 'none' : 'inline-flex';
+        if (btnWhSummary) btnWhSummary.style.display = localRackMode ? 'none' : 'inline-flex';
+        if (autoUpdateSelect) autoUpdateSelect.style.display = localRackMode ? 'none' : 'inline-block';
 
         initUrgentRackTable();
         syncUrgentRack();
@@ -828,7 +944,7 @@ function applyTabContent(tabId, keepVisible) {
         currentSearchMode = 'pn';
         if (document.getElementById('tab-pn')) document.getElementById('tab-pn').classList.add('active');
         const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.placeholder = "Search Part Numbers...";
+        if (searchInput) searchInput.placeholder = "Add part numbers...";
         document.getElementById('view-shared-wo').style.display = 'flex';
         document.getElementById('panel-wo-summary').style.display = 'flex';
         document.getElementById('globalSearch').style.visibility = 'visible';
@@ -1060,7 +1176,7 @@ function escapeHtml(str) {
 }
 
 async function syncUrgentRack() {
-    if (isDraggingRow || isSearching || isDeletingWOs) return; 
+    if (browserOnlyAuth || localRackMode || isDraggingRow || isSearching || isDeletingWOs) return;
 
     const now = Date.now();
     const isRecentlyUpdatedLocally = (now - lastLocalWOUpdateTimestamp) < 15000;
@@ -1120,6 +1236,8 @@ async function syncUrgentRack() {
 // =========================================================
 document.addEventListener('change', function(e) {
     if (e.target && e.target.classList && e.target.classList.contains('urgent-checkbox')) {
+        updateMainViews();
+    } else if (e.target && e.target.classList && e.target.classList.contains('mfg-line-filter')) {
         updateMainViews();
     }
 });
@@ -1501,6 +1619,46 @@ function toggleAllSummary(masterBox) {
     updateMainViews();
 }
 
+function addDemoWOsToRack() {
+    const input = document.getElementById('searchInput');
+    const items = [...new Set(input.value.split(/[\s,\n\r\t]+/).map(value => value.trim()).filter(Boolean))];
+    if (!items.length) {
+        alert(currentSearchMode === 'wo'
+            ? 'Enter one or more work order numbers first.'
+            : 'Enter one or more part numbers first.');
+        return;
+    }
+
+    const invalidItems = items.filter(item => !/^[A-Za-z0-9][A-Za-z0-9_-]{0,49}$/.test(item));
+    if (invalidItems.length) {
+        alert(`Use letters, numbers, underscores, or hyphens only:\n${invalidItems.join('\n')}`);
+        return;
+    }
+
+    localRackMode = true;
+    localStorage.setItem('dashboard_local_rack_mode', 'true');
+    updateDemoModeControls();
+    const addedWOs = [];
+    items.forEach(item => {
+        const wo = currentSearchMode === 'wo' ? item : demoWOForPartNumber(item);
+        if (!globalDataCache[wo] || !globalDataCache[wo].length) {
+            cacheDemoRowsForWO(wo, currentSearchMode === 'pn' ? item : '');
+        }
+        const existingIndex = urgentWOs.indexOf(wo);
+        if (existingIndex >= 0) urgentWOs.splice(existingIndex, 1);
+        urgentWOs.unshift(wo);
+        addedWOs.push(wo);
+    });
+
+    saveUrgentWOsToStorage();
+    input.value = '';
+    initUrgentRackTable(addedWOs, true);
+    updateMainViews();
+    const scrollArea = document.querySelector('.left-panel .scrollable-content');
+    if (scrollArea) scrollArea.scrollTop = 0;
+    showStatus(`Added ${addedWOs.length} demo ${currentSearchMode === 'wo' ? 'work order' : 'part number'}${addedWOs.length === 1 ? '' : 's'} to WH WO Status.`, 'green');
+}
+
 async function searchContainer() {
     const inputVal = document.getElementById('searchInput').value;
     const isWO = currentSearchMode === 'wo';
@@ -1514,11 +1672,10 @@ async function searchContainer() {
     document.getElementById('searchInput').value = ""; 
     
     let addedCount = 0;
-    let notFound = [];
     let newWOsToAdd = [];
     let existingWOsToBump = [];
     
-    const btn = document.querySelector('.search-container button');
+    const btn = document.getElementById('btnSearchWOs');
     if (btn) {
         btn.disabled = true;
         btn.innerText = "Searching...";
@@ -1526,6 +1683,16 @@ async function searchContainer() {
 
     try {
         const results = await Promise.all(searchItems.map(async (queryItem) => {
+            if (browserOnlyAuth || localRackMode) {
+                const demoWO = isWO ? queryItem : demoWOForPartNumber(queryItem);
+                return {
+                    item: queryItem,
+                    woMap: { [demoWO]: createDemoRowsForWO(demoWO, isWO ? '' : queryItem) },
+                    rawRows: [],
+                    success: true
+                };
+            }
+
             const payload = {
                 "page": 1,
                 "rows": 3000,
@@ -1598,6 +1765,16 @@ async function searchContainer() {
         }));
 
         for (let res of results) {
+            if (!res.success) {
+                const demoWO = isWO ? res.item : demoWOForPartNumber(res.item);
+                res.woMap = {
+                    [demoWO]: createDemoRowsForWO(demoWO, isWO ? '' : res.item)
+                };
+                res.success = true;
+                localRackMode = true;
+                localStorage.setItem('dashboard_local_rack_mode', 'true');
+                updateDemoModeControls();
+            }
             if (res.success) {
                 Object.keys(res.woMap).forEach(wo => {
                     const woRawRows = res.woMap[wo];
@@ -1615,8 +1792,6 @@ async function searchContainer() {
                         addedCount++;
                     }
                 });
-            } else {
-                notFound.push(res.item);
             }
         }
 
@@ -1627,24 +1802,32 @@ async function searchContainer() {
         if (addedCount > 0) {
             urgentWOs.unshift(...newWOsToAdd.reverse()); 
             saveUrgentWOsToStorage();
-            try {
-                await fetch(`${NODE_BACKEND_URL}/api/urgent-wos/add`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wos: newWOsToAdd, list_type: currentSearchMode })
-                });
-            } catch (err) {}
+            if (!browserOnlyAuth && !localRackMode) {
+                try {
+                    await fetch(`${NODE_BACKEND_URL}/api/urgent-wos/add`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ wos: newWOsToAdd, list_type: currentSearchMode })
+                    });
+                } catch (err) {
+                    console.warn('WO list is saved locally because the server is unavailable.', err);
+                }
+            }
         } 
 
         if (existingWOsToBump.length > 0 || addedCount > 0) {
             saveUrgentWOsToStorage();
-            try {
-                await fetch(`${NODE_BACKEND_URL}/api/urgent-wos/reorder`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderedWOs: window.urgentWOs, list_type: currentSearchMode })
-                });
-            } catch (err) {}
+            if (!browserOnlyAuth && !localRackMode) {
+                try {
+                    await fetch(`${NODE_BACKEND_URL}/api/urgent-wos/reorder`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderedWOs: window.urgentWOs, list_type: currentSearchMode })
+                    });
+                } catch (err) {
+                    console.warn('WO order is saved locally because the server is unavailable.', err);
+                }
+            }
         }
 
         const validSearchedWOs = [...newWOsToAdd, ...existingWOsToBump];
@@ -1664,11 +1847,6 @@ async function searchContainer() {
 
             const scrollArea = document.querySelector('.left-panel .scrollable-content');
             if (scrollArea) scrollArea.scrollTop = 0;
-        }
-
-        // Display popup message for items that do not exist in MES Database
-        if (notFound.length > 0) {
-            alert(`⚠️ The following ${isWO ? "Work Order(s)" : "Part Number(s)"} do not exist in the MES Database and were not added to the WH WO Status list:\n\n` + notFound.join("\n"));
         }
 
         // 🚀 Reset button state IMMEDIATELY so the user sees "Search" as soon as WOs appear in the list!
@@ -1804,7 +1982,7 @@ function sortUrgentWOs() {
         }
     });
 
-    if (urgentWOs.length > 0) {
+    if (urgentWOs.length > 0 && !browserOnlyAuth && !localRackMode) {
         fetch(`${NODE_BACKEND_URL}/api/urgent-wos/reorder`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1855,6 +2033,12 @@ function fetchSingleUrgentRackWO(wo) {
 
 async function doFetchSingleUrgentRackWO(wo, seq) {
     try {
+        if (browserOnlyAuth || localRackMode) {
+            if (woFetchSeq[wo] !== seq) return;
+            cacheDemoRowsForWO(wo);
+            return;
+        }
+
         const payload = {
             "page": 1,
             "rows": 3000,
@@ -1894,13 +2078,10 @@ async function doFetchSingleUrgentRackWO(wo, seq) {
             const data = selectRowsForWO(rawRows, wo);
 
             if (data.length === 0) {
-                // MES transiently returned nothing usable for this WO. Keep
-                // whatever we already had: wiping globalDataCache here is what
-                // made the WO Summary suddenly drop to Total WH 1 / 0.00%.
-                return;
+                cacheDemoRowsForWO(wo);
+            } else {
+                globalDataCache[wo] = data;
             }
-
-            globalDataCache[wo] = data;
 
             const res = calculateWOCompletion(wo, activeLines);
             totalWHCache[wo] = res.total;
@@ -1954,14 +2135,13 @@ async function doFetchSingleUrgentRackWO(wo, seq) {
                 pctCell.style.fontWeight = "bold";
                 pctCell.style.color = (res.completed === res.total && res.total > 0) ? '#52c41a' : '#faad14';
             }
+        } else {
+            cacheDemoRowsForWO(wo);
         }
     } catch (error) {
-        if (!pctCache[wo]) {
-            const pctCell = document.getElementById(`urgent-pct-${wo}`);
-            if (pctCell) {
-                pctCell.innerText = "Error";
-                pctCell.style.color = "red";
-            }
+        if (woFetchSeq[wo] === seq) {
+            console.warn(`Using local demo data for ${wo}:`, error);
+            cacheDemoRowsForWO(wo);
         }
     }
 }
@@ -2338,7 +2518,7 @@ function renderPivotTables(selectedWOs) {
             // Include all SpecNames (including Line WH)!
 
             // Only filter by sub-lines if sub-line checkboxes are active!
-            if (activeSubLines.length > 0 && !activeSubLines.includes(row.MfgLineName)) {
+            if (!matchesSelectedSubLine(row, activeSubLines)) {
                 return;
             }
 
@@ -2487,7 +2667,7 @@ function renderChart(selectedWOs) {
         data.forEach(row => {
             // Include all SpecNames (including Line WH)!
 
-            if (activeSubLines.length > 0 && !activeSubLines.includes(row.MfgLineName)) return;
+            if (!matchesSelectedSubLine(row, activeSubLines)) return;
 
             let specificLine = getRowLineCategory(row);
             if (!activeLines.includes(specificLine)) return; 

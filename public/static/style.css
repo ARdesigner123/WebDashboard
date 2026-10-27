@@ -375,6 +375,41 @@ tr:hover td {
     text-align: center;
 }
 
+.btn-add-demo {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: 1px solid rgba(167, 243, 208, 0.45);
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-add-demo:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.42);
+    filter: brightness(1.06);
+}
+
+.demo-data-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border: 1px solid #a7f3d0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    color: #047857;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.45px;
+    white-space: nowrap;
+}
+
 .btn-primary { 
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
     color: white; 
@@ -1431,6 +1466,40 @@ tr:hover td {
    the table blank for seconds while the delayed rows finish animating. */
 .chart-detail-row {
     animation-delay: calc(min(var(--row-idx, 0), 20) * 0.03s + 0.1s);
+}
+
+@media (min-width: 701px) and (max-width: 1200px) {
+    .top-tabs {
+        height: auto;
+        min-height: 48px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 12px;
+    }
+
+    .top-tabs > div:first-child {
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+    }
+
+    .top-tabs > div:last-child {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .search-container input {
+        width: clamp(150px, 30vw, 320px) !important;
+    }
+
+    .left-panel {
+        width: 300px;
+    }
+
+    .bottom-split {
+        gap: 10px;
+    }
 }
 
 /* Keep the compact modal readable on narrow screens. */
