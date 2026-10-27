@@ -415,40 +415,7 @@ async function handleAuthAction() {
             throw new Error(errMsg);
         }
 
-        let token = data.token || data.accessToken || data.django_token_key || null;
-        if (token && !String(token).startsWith('Bearer ')) {
-            token = 'Bearer ' + String(token);
-        }
-        if (!token && data.django_token_key) {
-            token = 'Bearer ' + data.django_token_key;
-        }
-        if (!token) throw new Error("Local authentication succeeded, but the session token was not returned.");
-        
-        globalAuthToken = token;
-        localStorage.setItem('mes_token', token);
-        
-        const authTokenEl = document.getElementById('authToken');
-        if (authTokenEl) authTokenEl.value = token;
-        
-        if (data.django_token_key) {
-            localDjangoToken = data.django_token_key;
-            localStorage.setItem('django_token', localDjangoToken);
-        } else {
-            throw new Error("Your local authentication token was not created correctly.");
-        }
-        localStorage.setItem('mes_username', data.username || user);
-        localStorage.setItem('demo_user_name', data.username || user);
-        
-        const loginScreen = document.getElementById('globalLoginScreen');
-        if (loginScreen) loginScreen.style.display = 'none';
-        
-        const mainContent = document.getElementById('mainAppContent');
-        if (mainContent) mainContent.style.display = 'flex';
-        
-        const chatbotToggle = document.getElementById('chatbot-toggle');
-        if (chatbotToggle) chatbotToggle.style.display = 'flex';
-        
-        initApp();
+        finishLocalLogin(data, user);
         
     } catch (error) {
         console.error("MES Auth Error:", error);
@@ -461,7 +428,68 @@ async function handleAuthAction() {
         }
     }
 }
+function finishLocalLogin(data, username) {
+    let token = data.token || data.accessToken || data.django_token_key || null;
+    if (token && !String(token).startsWith('Bearer ')) {
+        token = 'Bearer ' + String(token);
+    }
+    if (!token) throw new Error("Local authentication succeeded, but the session token was not returned.");
+    if (!data.django_token_key) throw new Error("Your local authentication token was not created correctly.");
+
+    globalAuthToken = token;
+    localStorage.setItem('mes_token', token);
+    localDjangoToken = data.django_token_key;
+    localStorage.setItem('django_token', localDjangoToken);
+    localStorage.setItem('mes_username', data.username || username);
+    localStorage.setItem('demo_user_name', data.username || username);
+
+    const authTokenEl = document.getElementById('authToken');
+    if (authTokenEl) authTokenEl.value = token;
+    const loginScreen = document.getElementById('globalLoginScreen');
+    if (loginScreen) loginScreen.style.display = 'none';
+    const mainContent = document.getElementById('mainAppContent');
+    if (mainContent) mainContent.style.display = 'flex';
+    const chatbotToggle = document.getElementById('chatbot-toggle');
+    if (chatbotToggle) chatbotToggle.style.display = 'flex';
+    initApp();
+}
+
+async function handleGuestLogin() {
+    const statusBox = document.getElementById('loginStatus');
+    const btn = document.getElementById('guestLoginBtn');
+    if (!statusBox) return;
+
+    statusBox.innerText = 'Starting a guest session...';
+    statusBox.style.color = 'var(--text-secondary)';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Starting guest session...';
+    }
+
+    try {
+        const response = await fetch('/api/guest-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+            throw new Error(data.error || data.message || 'Guest login failed.');
+        }
+        finishLocalLogin(data, 'dashboard-guest');
+    } catch (error) {
+        console.error('Guest Login Error:', error);
+        statusBox.innerText = error.message;
+        statusBox.style.color = '#ff4d4f';
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Login as a guest';
+        }
+    }
+}
 window.handleAuthAction = handleAuthAction;
+window.handleGuestLogin = handleGuestLogin;
 window.handlePlaceholderAutoUpdateChange = handlePlaceholderAutoUpdateChange;
 
 // 🚨 NEW: Chart Configuration State

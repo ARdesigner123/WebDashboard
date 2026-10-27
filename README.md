@@ -71,4 +71,7 @@ reviewed and restricted for your users.
 Copy `.env.example` to `.env` and adjust values as needed.
 
 ## Login behavior
-The login screen accepts a local username and password. The app creates or reuses the Django user and logs them in through the app’s own authentication flow.
+The login screen accepts a local username and password. The app creates or
+reuses the Django user and logs them in through the app’s own authentication
+flow. The **Login as a guest** button creates or reuses a shared passwordless
+demo account; guest sessions are not private.

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import (
-    mes_login, mes_proxy, task_report,
+    mes_login, guest_login, mes_proxy, task_report,
     get_urgent, add_urgent, remove_urgent, reorder_urgent,
     history_log, history_compare,
     assembly_live_query, export_excel_api
@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Local demo authentication and dashboard endpoints
     path('mes-login', mes_login),
+    path('guest-login', guest_login),
     path('mes-proxy', mes_proxy),
     path('export-excel', export_excel_api),
     path('task-report', task_report),
@@ -24,4 +25,3 @@ urlpatterns = [
     path('history/compare', history_compare),
     path('assembly-live-query', assembly_live_query),
 ]
-

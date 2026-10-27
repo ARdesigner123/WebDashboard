@@ -59,6 +59,14 @@ class LocalDemoAuthTests(TestCase):
         self.assertTrue(user.check_password('saved-pass1!'))
         self.assertFalse(user.check_password('other-pass2!'))
 
+    def test_guest_login_returns_token_without_password(self):
+        response = self.client.post('/api/guest-login', data={}, content_type='application/json')
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIn('django_token_key', response.json())
+        guest_user = get_user_model().objects.get(username='dashboard-guest')
+        self.assertFalse(guest_user.has_usable_password())
+
     def test_mes_proxy_returns_demo_rows_without_company_api(self):
         response = self.client.post(
             reverse('api:mes-login') if hasattr(reverse, 'api') else '/api/mes-proxy',

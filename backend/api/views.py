@@ -134,7 +134,7 @@ def mes_login(request):
             else:
                 user = None
 
-        if user is None:
+        if user is None and existing_user is None:
             user = User.objects.create_user(username=username, password=password)
 
         user = authenticate(request, username=username, password=password)
@@ -153,6 +153,35 @@ def mes_login(request):
         })
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def guest_login(request):
+    """Creates or reuses the shared, passwordless demo guest account."""
+    from django.contrib.auth import get_user_model, login
+    from rest_framework.authtoken.models import Token
+
+    User = get_user_model()
+    user, created = User.objects.get_or_create(
+        username='dashboard-guest',
+        defaults={'is_active': True},
+    )
+    if created:
+        user.set_unusable_password()
+        user.save(update_fields=['password'])
+    if not user.is_active:
+        return JsonResponse({'error': 'Guest access is currently unavailable.'}, status=503)
+
+    login(request, user)
+    django_token, _ = Token.objects.get_or_create(user=user)
+    return JsonResponse({
+        'message': 'Guest login successful',
+        'username': user.username,
+        'token': django_token.key,
+        'accessToken': django_token.key,
+        'django_token_key': django_token.key,
+    })
+
 
 CLEAN_EXCEL_RE = re.compile(r'[\000-\x08\x0b\x0c\x0e-\x1f]')
 
