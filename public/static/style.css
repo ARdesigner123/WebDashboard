@@ -1,0 +1,1442 @@
+/* ============================================================================
+   🎨 BIZLINK OPERATIONS DASHBOARD - ULTRA MODERN ENTERPRISE DESIGN SYSTEM
+   Theme: Executive White, Dark Slate Black, and Electric Royal Blue
+   ============================================================================ */
+
+/* Core Layout */
+body { 
+    margin: 0; 
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+    display: flex; 
+    height: 100vh; 
+    background-color: #f8fafc; 
+    color: #0f172a; 
+    overflow: hidden; 
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Main Content Area */
+.main-content { 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+/* ==========================================
+   🏢 TOP NAVIGATION BAR & BRANDING
+   ========================================== */
+.top-tabs { 
+    background-color: #0f172a; 
+    display: flex; 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+    padding: 0 16px; 
+    align-items: center; 
+    height: 48px; 
+    justify-content: space-between; 
+    gap: 12px;
+    flex-shrink: 0; 
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+    z-index: 100;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / Edge */
+}
+
+.top-tabs::-webkit-scrollbar {
+    display: none; /* Chrome / Safari / Opera */
+}
+
+.top-tabs > div {
+    flex-shrink: 0;
+}
+
+.brand-title { 
+    font-size: 16px; 
+    font-weight: 800; 
+    color: #ffffff; 
+    margin-right: 6px; 
+    letter-spacing: -0.5px; 
+    display: flex;
+    align-items: center;
+    cursor: default;
+    user-select: none;
+}
+
+.brand-logo-icon {
+    font-size: 16px;
+    margin-right: 5px;
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.6));
+}
+
+.brand-badge {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(37, 99, 235, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Navigation Tabs Container & Sliding Indicator */
+.tabs-nav-container {
+    position: relative;
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.65);
+    padding: 3px;
+    border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.tab-sliding-indicator {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    height: 30px;
+    width: 0;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0284c7 100%);
+    border-radius: 7px;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.6), 0 0 20px rgba(56, 189, 248, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition:
+        left 0.44s cubic-bezier(0.34, 1.2, 0.64, 1),
+        width 0.44s cubic-bezier(0.34, 1.2, 0.64, 1),
+        height 0.44s cubic-bezier(0.34, 1.2, 0.64, 1),
+        top 0.44s cubic-bezier(0.34, 1.2, 0.64, 1),
+        opacity 0.3s ease;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.tab { 
+    position: relative;
+    z-index: 2;
+    padding: 5px 11px; 
+    cursor: pointer; 
+    color: #94a3b8; 
+    border-radius: 7px; 
+    font-weight: 600; 
+    font-size: 11.5px; 
+    transition: color 0.25s ease, transform 0.2s ease; 
+    user-select: none; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    background: transparent !important;
+}
+
+.tab:hover { 
+    color: #ffffff; 
+    transform: translateY(-1px);
+}
+
+.tab.active { 
+    color: #ffffff !important; 
+    font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Dashboard Container */
+.dashboard { 
+    flex: 1; 
+    padding: 16px; 
+    display: flex; 
+    flex-direction: column; 
+    box-sizing: border-box; 
+    overflow: hidden; 
+}
+
+.dashboard-layout { 
+    display: flex; 
+    gap: 16px; 
+    align-items: stretch; 
+    flex: 1; 
+    min-height: 0; 
+    height: 100%; 
+}
+
+/* Panels */
+.left-panel { 
+    width: 360px; 
+    flex-shrink: 0; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 0; 
+    height: 100%; 
+}
+
+.right-panel { 
+    flex: 1; 
+    min-width: 0; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 0; 
+    gap: 16px; 
+    height: 100%; 
+}
+
+/* Bottom Split */
+.bottom-split { 
+    display: flex; 
+    flex-direction: row; 
+    gap: 16px; 
+    flex: 1; 
+    min-height: 0; 
+    min-width: 0; 
+    height: 100%; 
+}
+
+/* ==========================================
+   📦 CARD CONTAINERS & SECTION STYLING
+   ========================================== */
+.table-container { 
+    background: #ffffff; 
+    border-radius: 12px; 
+    padding: 16px; 
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02); 
+    display: flex; 
+    flex-direction: column !important; 
+    flex: 1; 
+    min-height: 0; 
+    min-width: 0; 
+    height: 100%;
+    box-sizing: border-box;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.table-container:hover {
+    box-shadow: 0 8px 25px -3px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+    border-color: #cbd5e1;
+}
+
+/* Headers */
+.table-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 12px; 
+    border-left: 4px solid #2563eb; 
+    padding-left: 12px; 
+    flex-shrink: 0; 
+    width: 100%; 
+    box-sizing: border-box; 
+}
+
+.table-header h3 { 
+    margin: 0; 
+    color: #0f172a; 
+    font-size: 14px; 
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+/* Scrollable Areas */
+.scrollable-content { 
+    flex: 1; 
+    overflow-y: auto; 
+    overflow-x: auto; 
+    min-height: 0; 
+    width: 100%; 
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #cbd5e1; 
+    border-radius: 4px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #94a3b8; 
+}
+
+/* ==========================================
+   📊 DATA TABLES & GRID STYLING
+   ========================================== */
+table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0;
+    font-size: 11.5px; 
+}
+
+th, td { 
+    padding: 9px 12px; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+
+th { 
+    background-color: #f8fafc; 
+    color: #334155; 
+    font-weight: 700; 
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky; 
+    top: 0; 
+    z-index: 10; 
+    border-bottom: 2px solid #e2e8f0;
+}
+
+td {
+    color: #1e293b;
+    transition: background 0.15s ease;
+}
+
+tr:hover td { 
+    background-color: #eff6ff !important; 
+}
+
+.nowrap-table th, .nowrap-table td { white-space: nowrap; }
+.compact-table th, .compact-table td { text-align: center; }
+
+/* ==========================================
+   📊 WO SUMMARY TABLE COMPACT STYLING (TAB 1 & TAB 2)
+   ========================================== */
+#summaryTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#summaryTable th {
+    font-size: 9.5px;
+    padding: 5px 6px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+#summaryTable td {
+    font-size: 10px;
+    padding: 4px 6px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+#summaryTable td.wo-num-cell {
+    white-space: nowrap;
+}
+
+/* ==========================================
+   🔍 SEARCH INPUTS & BUTTONS
+   ========================================== */
+.search-container { 
+    display: flex; 
+    gap: 6px; 
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.search-container input { 
+    background: rgba(255, 255, 255, 0.08); 
+    border: 1px solid rgba(255, 255, 255, 0.18); 
+    color: #ffffff; 
+    padding: 7px 14px; 
+    border-radius: 8px; 
+    font-size: 12px; 
+    outline: none; 
+    transition: all 0.2s ease; 
+}
+
+.search-container input::placeholder { 
+    color: #94a3b8; 
+}
+
+.search-container input:focus { 
+    background: rgba(255, 255, 255, 0.14); 
+    border-color: #3b82f6; 
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.search-container button {
+    flex-shrink: 0;
+    min-width: 80px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.btn-primary { 
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+    color: white; 
+    border: none; 
+    padding: 7px 16px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 700; 
+    font-size: 12px; 
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover { 
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+    filter: brightness(1.08);
+}
+
+/* Modal Close Button & Animations */
+.modal-close-btn {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(4px);
+    line-height: 1;
+}
+
+.modal-close-btn:hover {
+    background: rgba(239, 68, 68, 0.95);
+    border-color: rgba(239, 68, 68, 1);
+    color: #ffffff;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.7);
+}
+
+@keyframes modalPop {
+    0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.copy-btn { 
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+    padding: 5px 12px; 
+    font-size: 11px; 
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.btn-small { 
+    background-color: #2563eb; 
+    color: white; 
+    border: none; 
+    padding: 5px 10px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 11px; 
+    transition: all 0.2s ease; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-small:hover { 
+    background-color: #1d4ed8; 
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-danger { 
+    background-color: #ef4444; 
+}
+
+.btn-danger:hover { 
+    background-color: #dc2626; 
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Status Badges */
+.status-badge { 
+    background-color: #ecfdf5; 
+    border: 1px solid #a7f3d0; 
+    color: #059669; 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-weight: 700; 
+    font-size: 11px; 
+    animation: pulse 2s infinite; 
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.online-counter { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    font-weight: 700; 
+    color: #059669; 
+    background: #ecfdf5; 
+    padding: 4px 12px; 
+    border-radius: 15px; 
+    border: 1px solid #a7f3d0; 
+    font-size: 12px; 
+}
+
+/* Line Toggles */
+.line-toggles { display: flex; gap: 6px; }
+.btn-toggle { 
+    background: #f1f5f9; 
+    border: 1px solid #cbd5e1; 
+    padding: 5px 12px; 
+    cursor: pointer; 
+    border-radius: 6px; 
+    font-weight: 700; 
+    color: #475569; 
+    font-size: 11px; 
+    transition: all 0.2s ease; 
+}
+.btn-toggle:hover { 
+    background: #eff6ff; 
+    border-color: #3b82f6; 
+    color: #2563eb; 
+}
+.btn-toggle.active { 
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+    color: #ffffff; 
+    border-color: #2563eb; 
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.datetime-input { 
+    padding: 6px 10px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 6px; 
+    font-size: 12px; 
+    color: #0f172a; 
+    outline: none; 
+    transition: border 0.2s ease;
+}
+.datetime-input:focus { 
+    border-color: #2563eb; 
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Drag and Drop Styles */
+.clickable-row { cursor: grab; transition: background 0.2s; }
+.clickable-row:active { cursor: grabbing; }
+.clickable-row.dragging { opacity: 0.5; background-color: #eff6ff; }
+.clickable-row.over { border-top: 2px dashed #2563eb; }
+
+/* ==========================================
+   🤖 AI CHATBOT UI STYLES
+   ========================================== */
+#chatbot-toggle:hover { 
+    background-color: #075e54 !important; 
+    transform: translateY(-1px);
+}
+
+#chatbot-window {
+    position: fixed;
+    top: 65px; 
+    right: 24px; 
+    width: 340px;
+    height: 480px;
+    background-color: #e5ddd5;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
+    display: none; 
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chat-header {
+    background-color: #075e54;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.message.bot { background-color: #ffffff; align-self: flex-start; border-top-left-radius: 2px; }
+.message.user { background-color: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
+
+.chat-quick-replies {
+    display: flex;
+    gap: 8px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    background-color: transparent;
+    scrollbar-width: none;
+}
+.chat-quick-replies::-webkit-scrollbar { display: none; }
+.quick-reply {
+    background-color: white;
+    color: #128C7E;
+    border: 1px solid #128C7E;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.quick-reply:hover { background-color: #128C7E; color: white; }
+
+.chat-input-area {
+    display: flex;
+    padding: 10px;
+    background-color: #f0f0f0;
+    gap: 10px;
+}
+.chat-input-area input {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    outline: none;
+}
+.chat-input-area button {
+    background-color: #128C7E;
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.chat-input-area button:hover { background-color: #075e54; }
+
+/* ============================================================================
+   ⚡ PREMIUM ENTERPRISE AUTHENTICATION STYLES (GLASSMORPHISM)
+   ============================================================================ */
+:root {
+    --auth-bg-gradient: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 1) 0%, rgba(30, 41, 59, 1) 90%);
+    --auth-card-bg: rgba(255, 255, 255, 0.05);
+    --auth-bg-gradient: radial-gradient(ellipse at bottom, #0d1d31 0%, #0c0d21 50%, #05050f 100%);
+    --auth-card-bg: rgba(15, 23, 42, 0.65);
+    --auth-card-border: rgba(56, 189, 248, 0.25);
+    --auth-input-bg: rgba(255, 255, 255, 0.05);
+    --auth-input-focus: rgba(56, 189, 248, 0.35);
+    --auth-primary-glow: 0 0 25px rgba(56, 189, 248, 0.5);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(226, 232, 240, 0.8);
+}
+
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #020617;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+}
+
+/* Ambient Floating Nebula Spheres */
+.nebula-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(110px);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.35;
+}
+
+.nebula-1 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #0284c7 0%, #0369a1 100%);
+    top: -100px;
+    left: -100px;
+    animation: nebulaDrift1 18s ease-in-out infinite alternate;
+}
+
+.nebula-2 {
+    width: 550px;
+    height: 550px;
+    background: radial-gradient(circle, #7c3aed 0%, #4c1d95 100%);
+    bottom: -120px;
+    right: -120px;
+    animation: nebulaDrift2 22s ease-in-out infinite alternate;
+}
+
+.nebula-3 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, #06b6d4 0%, #0891b2 100%);
+    top: 40%;
+    right: 25%;
+    animation: nebulaDrift3 15s ease-in-out infinite alternate;
+}
+
+@keyframes nebulaDrift1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(80px, 60px) scale(1.2); }
+}
+
+@keyframes nebulaDrift2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-70px, -90px) scale(1.15); }
+}
+
+@keyframes nebulaDrift3 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-50px, 40px) scale(0.9); }
+}
+
+/* Floating Levitating Glassmorphism Space Card with Blue-Black-White Cosmic Theme */
+.auth-card {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 440px;
+    padding: 40px 42px;
+    background: rgba(6, 11, 25, 0.92);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1.5px solid rgba(56, 189, 248, 0.4);
+    border-radius: 24px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.95), 0 0 45px rgba(56, 189, 248, 0.3);
+    transition: transform 0.2s ease-out, box-shadow 0.4s ease, border-color 0.3s ease;
+    animation: spaceFloat 6s ease-in-out infinite;
+    overflow: hidden;
+}
+
+/* Glass Glare Sheen Sweep Effect across container */
+.auth-card::before {
+    content: '';
+    position: absolute;
+    top: -150%; left: -150%;
+    width: 300%; height: 300%;
+    background: linear-gradient(
+        45deg,
+        transparent 45%,
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 55%
+    );
+    animation: cardGlassSheen 7s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes cardGlassSheen {
+    0% { transform: translate(-30%, -30%); }
+    20% { transform: translate(30%, 30%); }
+    100% { transform: translate(30%, 30%); }
+}
+
+/* Blue, Black, White Glowing Border Aura Overlay */
+.auth-card::after {
+    content: '';
+    position: absolute;
+    top: -6px; left: -6px; right: -6px; bottom: -6px;
+    background: linear-gradient(135deg, #0284c7 0%, #ffffff 30%, #1e40af 65%, #38bdf8 100%);
+    background-size: 300% 300%;
+    border-radius: 28px;
+    z-index: -2;
+    animation: blueBlackWhiteBorder 8s linear infinite;
+    opacity: 0.45;
+    filter: blur(14px);
+}
+
+@keyframes blueBlackWhiteBorder {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes spaceFloat {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(0.4deg); }
+}
+
+.auth-card:hover {
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 40px 80px -10px rgba(0, 0, 0, 0.98), 0 0 65px rgba(56, 189, 248, 0.5);
+}
+
+.space-badge {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.space-badge span {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    color: #ffffff;
+    background: rgba(37, 99, 235, 0.25);
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    display: inline-block;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.9);
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.auth-logo-icon {
+    font-size: 34px;
+    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 25px rgba(56, 189, 248, 0.9));
+    animation: logoPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes logoPulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.8)); }
+    100% { transform: scale(1.08); filter: drop-shadow(0 0 20px rgba(255, 255, 255, 1)) drop-shadow(0 0 30px rgba(37, 99, 235, 1)); }
+}
+
+.auth-logo-text {
+    font-size: 27px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.9));
+}
+
+.auth-subtitle {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.65;
+    margin-bottom: 26px;
+    text-align: center;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.auth-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 22px;
+    text-align: left;
+}
+
+.auth-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #38bdf8;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.auth-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-input-icon {
+    position: absolute;
+    left: 15px;
+    font-size: 17px;
+    opacity: 0.9;
+    transition: all 0.3s ease;
+    color: #38bdf8;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8));
+}
+
+.auth-input {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    background: rgba(10, 18, 38, 0.95);
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    border-radius: 14px;
+    color: #ffffff;
+    font-size: 14.5px;
+    font-weight: 700;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.auth-input::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.auth-input-wrapper:focus-within .auth-input-icon {
+    color: #ffffff;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 1));
+}
+
+.auth-input:focus {
+    border-color: #ffffff;
+    background: rgba(15, 25, 50, 0.98);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.35), 0 0 25px rgba(56, 189, 248, 0.5);
+}
+
+.auth-btn {
+    position: relative;
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0284c7 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    border-radius: 14px;
+    color: #ffffff;
+    font-size: 15.5px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5), 0 0 25px rgba(56, 189, 248, 0.4);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: 12px;
+    overflow: hidden;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.auth-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transition: left 0.6s ease;
+}
+
+.auth-btn:hover::before {
+    left: 100%;
+}
+
+.auth-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.7), 0 0 35px rgba(255, 255, 255, 0.6);
+    border-color: #ffffff;
+}
+
+.auth-btn:active {
+    transform: translateY(0) scale(0.99);
+}
+
+.auth-status {
+    margin-top: 20px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    min-height: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.interval-select-btn {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.interval-select-btn:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+.interval-select-btn option {
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px;
+}
+
+/* 📊 CHART DETAIL BREAKDOWN MODAL ANIMATIONS & EFFECTS */
+#chartDetailModal {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+}
+
+#chartDetailModal.chart-modal-open {
+    opacity: 1;
+    pointer-events: auto;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+#chartDetailModal .chart-modal-card {
+    transform: scale(0.82) translateY(35px) rotateX(10deg);
+    opacity: 0;
+    transform-origin: center center;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    perspective: 1000px;
+}
+
+#chartDetailModal.chart-modal-open .chart-modal-card {
+    transform: scale(1) translateY(0) rotateX(0deg);
+    opacity: 1;
+    box-shadow: 0 30px 70px -15px rgba(15, 23, 42, 0.5), 0 0 50px rgba(59, 130, 246, 0.22);
+}
+
+#chartDetailModal.chart-modal-closing {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    backdrop-filter: blur(0px) !important;
+    -webkit-backdrop-filter: blur(0px) !important;
+    transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease;
+}
+
+#chartDetailModal.chart-modal-closing .chart-modal-card {
+    transform: scale(0.88) translateY(-25px) rotateX(-8deg) !important;
+    opacity: 0 !important;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease !important;
+}
+
+/* Stat Cards Pop-in Animation */
+.chart-stat-card {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#chartDetailModal.chart-modal-open .chart-stat-card {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+#chartDetailModal.chart-modal-open .chart-stat-card:nth-child(1) { transition-delay: 0.08s; }
+#chartDetailModal.chart-modal-open .chart-stat-card:nth-child(2) { transition-delay: 0.14s; }
+#chartDetailModal.chart-modal-open .chart-stat-card:nth-child(3) { transition-delay: 0.20s; }
+
+/* Table Row Staggered Slide-in Animation */
+.chart-detail-row {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: chartRowSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(var(--row-idx, 0) * 0.025s + 0.12s);
+}
+
+@keyframes chartRowSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Close Button Hover Pulse & Spin Effects */
+.chart-modal-close-btn {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.chart-modal-close-btn:hover {
+    background: rgba(239, 68, 68, 0.9) !important;
+    border-color: #ef4444 !important;
+    transform: scale(1.15) rotate(90deg) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6) !important;
+}
+
+.chart-modal-close-btn:active {
+    transform: scale(0.9) rotate(90deg) !important;
+}
+
+/* 🚀 PRESENTATION SLIDE TAB TRANSITIONS & EFFECTS
+   =========================================================================
+   Layout: every view container is stacked in ONE grid cell, so the outgoing
+   and the incoming view overlap instead of pushing each other around. The old
+   flex-column layout gave each view `flex: 1` mid transition, i.e. both were
+   squashed to 50% height, which is a big part of why it looked laggy.
+
+   Motion: only `transform` and `opacity` are animated, and everything is
+   driven by CSS keyframes (script.js just toggles a class), so the whole
+   transition can run on the compositor without re-laying-out the tables.
+   ========================================================================= */
+
+.dashboard {
+    position: relative;
+    perspective: 1600px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/* Stack every view on top of each other */
+.dashboard > .dashboard-layout {
+    grid-area: 1 / 1;
+    min-width: 0;
+    min-height: 0;
+    backface-visibility: hidden;
+    /* Inline `height: calc(100vh - 60px)` on #view-task used to be neutralised
+       by `flex: 1`; the grid needs the same override. */
+    height: 100% !important;
+}
+
+/* View Container Presentation Slide Rules */
+.dashboard-layout {
+    will-change: transform, opacity;
+    transform-origin: center center;
+    /* Keyframes below replace the old `transition` based version. */
+    transition: none;
+}
+
+/* Layering: the outgoing view stays on top while it fades and slides away,
+   revealing the incoming view underneath. */
+.view-anim-out-fwd,
+.view-anim-out-bwd { z-index: 3; }
+.view-anim-in-fwd,
+.view-anim-in-bwd { z-index: 2; }
+
+/* --- Cross view slide (tabs that live in different view containers) ------ */
+.view-anim-out-fwd {
+    animation: viewSlideOutForward 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.view-anim-out-bwd {
+    animation: viewSlideOutBackward 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.view-anim-in-fwd {
+    animation: viewSlideInForward 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.view-anim-in-bwd {
+    animation: viewSlideInBackward 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* --- Shared container swap (WO <-> Part Number <-> Excel) ---------------- */
+.view-swap-fwd { animation: viewSwapForward 560ms linear both; }
+.view-swap-bwd { animation: viewSwapBackward 560ms linear both; }
+
+@keyframes viewSlideOutForward {
+    0%   { opacity: 1;    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg); }
+    40%  { opacity: 0.8;  }
+    100% { opacity: 0;    transform: translate3d(-76px, 0, 0) scale(0.96) rotateY(2.5deg); }
+}
+
+@keyframes viewSlideOutBackward {
+    0%   { opacity: 1;    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg); }
+    40%  { opacity: 0.8;  }
+    100% { opacity: 0;    transform: translate3d(76px, 0, 0) scale(0.96) rotateY(-2.5deg); }
+}
+
+@keyframes viewSlideInForward {
+    0%   { opacity: 0;    transform: translate3d(76px, 0, 0) scale(0.96) rotateY(-2.5deg); }
+    55%  { opacity: 0.6;  }
+    100% { opacity: 1;    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg); }
+}
+
+@keyframes viewSlideInBackward {
+    0%   { opacity: 0;    transform: translate3d(-76px, 0, 0) scale(0.96) rotateY(2.5deg); }
+    55%  { opacity: 0.6;  }
+    100% { opacity: 1;    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg); }
+}
+
+/* One continuous out -> swap -> in run. The container is guaranteed to be
+   fully transparent between 28% and 45%, which is where script.js swaps the
+   panels over (VIEW_SWAP_CONTENT_AT = 33%). */
+@keyframes viewSwapForward {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    }
+    28% {
+        opacity: 0;
+        transform: translate3d(-60px, 0, 0) scale(0.98);
+        animation-timing-function: linear;
+    }
+    33% {
+        opacity: 0;
+        transform: translate3d(60px, 0, 0) scale(0.98);
+        animation-timing-function: linear;
+    }
+    45% {
+        opacity: 0;
+        transform: translate3d(48px, 0, 0) scale(0.985);
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes viewSwapBackward {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+        animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    }
+    28% {
+        opacity: 0;
+        transform: translate3d(60px, 0, 0) scale(0.98);
+        animation-timing-function: linear;
+    }
+    33% {
+        opacity: 0;
+        transform: translate3d(-60px, 0, 0) scale(0.98);
+        animation-timing-function: linear;
+    }
+    45% {
+        opacity: 0;
+        transform: translate3d(-48px, 0, 0) scale(0.985);
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+/* Staggered Content Reveal Animation when a Tab Becomes Active.
+   Only `opacity`/`transform` are animated (no `scale`): scaling a full table
+   panel forces the browser to re-rasterise it on every single frame. */
+.tab-slide-active .table-container,
+.tab-slide-active .card,
+.tab-slide-active .left-panel,
+.tab-slide-active .right-panel,
+.tab-slide-active .manpower-container,
+.tab-slide-active .task-execution-wrapper {
+    animation: slideContentPopIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideContentPopIn {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 14px, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* ==========================================================================
+   📊 CHART DETAIL BREAKDOWN MODAL - COMPACT LAYOUT + STICKY HEADER
+   ========================================================================== */
+
+/* Only the table itself scrolls, so the "Associated Records" title bar stays
+   put and the column-name row can stay pinned while browsing long records. */
+.chart-modal-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 20px 16px;
+    background: #ffffff;
+}
+
+.chart-modal-table-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.04);
+    background: #ffffff;
+    overscroll-behavior: contain;
+}
+
+/* `border-collapse: separate` is required here: collapsed borders are dropped
+   by sticky cells while the table scrolls, leaving gaps in the header row.
+   `table-layout: fixed` is what makes every column exactly the same width -
+   content no longer influences the layout, so long values are clipped (the
+   full value is always available through the cell's title tooltip). */
+.chart-modal-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+    text-align: left;
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+}
+
+/* ---- Pinned column-name row (sticks to the top of the scroll area) ----
+   Under `table-layout: fixed` the first row dictates every column width, so
+   100% / 7 hands all seven columns an identical share. */
+.chart-modal-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    width: 14.2857%;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 10px 10px;
+    text-align: left;
+    border-bottom: 2px solid #cbd5e1;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.chart-modal-table thead th.chart-modal-col-qty { text-align: right; }
+/* TopMFG column accent (deliberately NOT blue - blue is reserved for WO
+   Number). Swap the hex here and on td.chart-detail-key below together.
+   Alternatives: green #059669 | red #dc2626 | amber #d97706 | teal #0d9488 */
+.chart-modal-table thead th.chart-modal-col-topmfg { color: #a21caf; }
+
+/* ---- Pinned identifier column (sticks to the left edge) ---- */
+.chart-modal-table thead th:first-child,
+.chart-modal-table tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    border-right: 2px solid #cbd5e1;
+}
+
+.chart-modal-table thead th:first-child { z-index: 6; } /* corner: above both */
+
+/* ---- Body cells: equal width, overflow clipped with an ellipsis ---- */
+.chart-modal-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chart-modal-table tbody td:first-child { background: #ffffff; }
+
+.chart-modal-table tbody tr:hover td,
+.chart-modal-table tbody tr:hover td:first-child { background: #eff6ff; }
+
+/* Cell classes are fully qualified so they win over the tbody td base rule. */
+.chart-modal-table tbody td.chart-detail-key {
+    font-weight: 800;
+    color: #c026d3;
+    font-size: 12px;
+}
+
+.chart-modal-table tbody td.chart-detail-wo {
+    font-weight: 800;
+    color: #2563eb;
+}
+
+.chart-modal-table tbody td .chart-detail-line-badge {
+    display: inline-block;
+    max-width: 100%;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.chart-modal-table tbody td.chart-detail-traveler {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #475569;
+}
+
+.chart-modal-table tbody td.chart-detail-pn {
+    font-weight: 600;
+    color: #d97706;
+}
+
+.chart-modal-table tbody td.chart-detail-task {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.chart-modal-table tbody td.chart-detail-qty {
+    text-align: right;
+    font-weight: 800;
+    color: #059669;
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-modal-table tbody td.chart-detail-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 26px 10px;
+    font-style: italic;
+    font-size: 12.5px;
+    white-space: normal;
+}
+
+/* Cap the row entrance stagger so huge result sets do not leave the bottom of
+   the table blank for seconds while the delayed rows finish animating. */
+.chart-detail-row {
+    animation-delay: calc(min(var(--row-idx, 0), 20) * 0.03s + 0.1s);
+}
+
+/* Keep the compact modal readable on narrow screens. */
+@media (max-width: 700px) {
+    .chart-modal-body { padding: 12px 12px 14px; }
+    .chart-modal-table { font-size: 11.5px; }
+    .chart-modal-table thead th { font-size: 10px; padding: 8px 6px; }
+    .chart-modal-table tbody td { padding: 7px 6px; }
+}

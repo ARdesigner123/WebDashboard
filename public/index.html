@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/style.css?v=6.3">
+    <script src="./static/backend-config.js"></script>
+    <script src="./static/script.js?v=12.1"></script>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc;">
+
+    <div id="globalLoginScreen" class="auth-overlay">
+        <!-- Animated Space Canvas for Stars, Shooting Stars & Asteroids -->
+        <canvas id="spaceCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;"></canvas>
+
+        <!-- Ambient Glowing Nebula Spheres -->
+        <div class="nebula-glow nebula-1"></div>
+        <div class="nebula-glow nebula-2"></div>
+        <div class="nebula-glow nebula-3"></div>
+
+        <div class="auth-card">
+            <div class="space-badge">
+                <span>🌌 FLOATING IN SPACE • OPERATIONAL TERMINAL</span>
+            </div>
+
+            <div class="auth-brand">
+                <span class="auth-logo-icon">⚡</span>
+                <span class="auth-logo-text">Operations Center</span>
+            </div>
+            
+            <div id="loginForm" class="auth-form-content">
+                <p class="auth-subtitle">Create your own local username and password to access the demo work-order dashboard and live operational metrics.</p>
+                
+                <div class="auth-group">
+                    <label class="auth-label">Username</label>
+                    <div class="auth-input-wrapper">
+                        <span class="auth-input-icon">👤</span>
+                        <input type="text" id="mesUser" class="auth-input" placeholder="Enter your username">
+                    </div>
+                </div>
+                
+                <div class="auth-group">
+                    <label class="auth-label">Password</label>
+                    <div class="auth-input-wrapper">
+                        <span class="auth-input-icon">🔒</span>
+                        <input type="password" id="mesPass" class="auth-input" placeholder="Enter your password" onkeypress="if(event.key === 'Enter') handleAuthAction()">
+                    </div>
+                </div>
+                
+                <button id="loginBtn" class="auth-btn" onclick="handleAuthAction()">
+                    <span>Secure Login</span>
+                    <span style="font-size: 16px; margin-left: 6px;">🚀</span>
+                </button>
+            </div>
+            
+            <div id="loginStatus" class="auth-status"></div>
+        </div>
+    </div>
+
+    <div class="main-content" id="mainAppContent" style="display: none;">
+        
+        <div class="top-tabs">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="brand-title">
+                    <span class="brand-logo-icon">⚡</span>Operations
+                </div>
+                
+                <div class="tabs-nav-container" id="tabsNavContainer">
+                    <div class="tab-sliding-indicator" id="tabSlidingIndicator"></div>
+                    <div class="tab active" id="tab-wo" onclick="switchTab('wo')">WO Detailed Status</div>
+                    <div class="tab" id="tab-pn" onclick="switchTab('pn')">WO Detailed Status (Part Number)</div>
+                    <div class="tab" id="tab-overall" onclick="switchTab('overall')">Overall WO Status</div>
+                    <div class="tab" id="tab-excel" onclick="switchTab('excel')">Excel Viewer</div>
+                    <div class="tab" id="tab-manpower" onclick="switchTab('manpower')">Manpower Calculator</div>
+                    <div class="tab" id="tab-task" onclick="switchTab('task')">Task Exporter</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 8px; position: relative;">
+                <div class="search-container" id="globalSearch">
+                    <input type="text" id="searchInput" placeholder="Search Multiple WOs..." style="width: 150px;" onkeypress="handleSearchEnter(event)">
+                    <button class="btn-primary" onclick="searchContainer()">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            
+            <div id="view-shared-wo" class="dashboard-layout tab-slide-active">
+                <div class="left-panel">
+                    <div class="table-container">
+                        <div class="table-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; width: 100%; box-sizing: border-box;">
+                            <h3 style="margin: 0; font-size: 14px; white-space: nowrap;">WH WO Status</h3>
+                            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto;">
+                                <button id="btnSyncPlaceholder" class="btn-small" onclick="syncAllToPlaceholder()" style="background-color: #2db7f5; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Copy & paste all WOs to Placeholder sheet tab">📋 Placeholder</button>
+                                <button id="btnSyncWhSummary" class="btn-small" onclick="syncAllToRespectiveTabs()" style="background-color: #52c41a; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Copy & paste each WO data to its own WO sheet tab">📊 WH Summary</button>
+                                <select id="placeholderAutoUpdateSelect" onchange="handlePlaceholderAutoUpdateChange(this.value)" style="font-size: 11px; padding: 4px 6px; border-radius: 4px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; font-weight: 500; color: #333;" title="Auto Update Placeholder sheet tab">
+                                    <option value="off" selected>Auto Update: Off</option>
+                                    <option value="on">Auto Update: On</option>
+                                </select>
+                                <button class="btn-small btn-danger" onclick="deleteSelectedWOs()" style="padding: 4px 8px; font-weight: 500;" title="Delete selected WOs from database">🗑️ Delete</button>
+                            </div>
+                        </div>
+                        <div class="scrollable-content">
+                            <table id="urgentTable">
+                                <thead>
+                                    <tr>
+                                         <th style="width: 30px; text-align: center;"><input type="checkbox" id="selectAllUrgent" onchange="toggleAllUrgent(this)"></th>
+                                        <th>WO</th>
+                                        <th>Prod Des</th>
+                                        <th>Completion %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="urgentBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel" id="panel-wo-summary">
+                    <div class="table-container" id="summaryContainer" style="display: flex; flex-direction: column; flex: 1; height: 100%;">
+                        <div class="table-header">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <h3>Work Order Summary</h3>
+                                <div class="line-toggles" style="display: flex; align-items: center; gap: 5px;">
+                                    <button class="btn-toggle active" id="btn-WH" onclick="toggleLine('WH')">WH</button>
+                                    <button class="btn-toggle" id="btn-BB" onclick="toggleLine('BB')">BB</button>
+                                    <button class="btn-toggle" id="btn-SI" onclick="toggleLine('SI')">SI</button>
+                                </div>
+                                <span id="totalRemainingTime" style="font-size: 11px; font-weight: bold; background: #fff1f0; color: #ff4d4f; padding: 4px 10px; border-radius: 4px; border: 1px solid #ffccc7; display: flex; align-items: center; gap: 3px; box-shadow: 0 2px 4px rgba(255, 77, 79, 0.05); white-space: nowrap;">
+                                    Total Remaining: <span>0.00</span> hrs
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn-primary copy-btn" onclick="copyRawData()">📋 Copy Raw Data</button>
+                                <button class="btn-primary copy-btn" style="background-color: #1890ff;" onclick="exportRawData()">📥 Export Excel</button>
+                            </div>
+                        </div>
+                        <div class="scrollable-content">
+                            <table id="summaryTable" class="compact-table nowrap-table">
+                                <thead id="summaryHead"></thead>
+                                <tbody id="summaryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bottom-split" style="flex: 1.5; gap: 15px; margin-top: 15px;">
+                        <div class="table-container" id="pivotContainer" style="display: flex; flex-direction: column; flex: 1;">
+                            
+                            <div class="table-header" style="flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 5px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <h3>Category Pivot Analysis</h3>
+                                        <div style="position: relative;" id="woChartDropdownWrapper">
+                                            <button class="btn-toggle" onclick="toggleWODropdown(event)" style="font-size: 10px; padding: 2px 8px; border-color: #1890ff; color: #1890ff;">Filter WOs ▼</button>
+                                            <div id="woChartDropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; z-index: 100; min-width: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 4px; max-height: 200px; overflow-y: auto;">
+                                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                                    <li><a href="#" onclick="filterWO('WH'); return false;">WH</a></li>
+                                                    <li><a href="#" onclick="filterWO('BB'); return false;">BB</a></li>
+                                                    <li><a href="#" onclick="filterWO('SI'); return false;">SI</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px 10px; border-radius: 6px; border: 1px solid #e8e8e8;">
+                                    <div class="line-toggles">
+                                        <button class="btn-toggle active" id="chart-btn-bar" onclick="setChartType('bar')">Bar Chart</button>
+                                        <button class="btn-toggle" id="chart-btn-pie" onclick="setChartType('pie')">Pie Chart</button>
+                                    </div>
+                                    <div class="line-toggles" style="gap: 15px;">
+                                        <label style="font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #555;">
+                                            <input type="checkbox" class="chart-line-filter" value="WH" checked onchange="updateMainViews()"> WH
+                                        </label>
+                                        <label style="font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #555;">
+                                            <input type="checkbox" class="chart-line-filter" value="BB" checked onchange="updateMainViews()"> BB
+                                        </label>
+                                        <label style="font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; color: #555;">
+                                            <input type="checkbox" class="chart-line-filter" value="SI" checked onchange="updateMainViews()"> SI
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="pivotTablesWrapper" class="scrollable-content" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                        </div>
+
+                        <div class="table-container" id="chartContainer" style="display: flex; flex-direction: column; flex: 1.5; padding: 15px;">
+                            <div class="table-header">
+                                <h3>Data Visualization</h3>
+                            </div>
+                            <div style="flex: 1; position: relative; width: 100%; height: 100%; min-height: 220px;">
+                                <canvas id="analyticsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+
+                <div class="right-panel" id="panel-excel-viewer" style="display: none; position: relative; flex-direction: column; gap: 10px;">
+                    <!-- Excel Control Header Bar -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 16px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">📊</span>
+                            <div>
+                                <h3 id="excelViewerTitle" style="margin: 0; font-size: 14px; font-weight: 700; color: #166534;">Spreadsheet: Urgent Rack WO Live</h3>
+                                <span style="font-size: 11px; color: #64748b;">Live Google Spreadsheet Integration</span>
+                            </div>
+                        </div>
+                        <button onclick="toggleExcelSwitch(event)" style="display: flex; align-items: center; gap: 6px; background-color: #166534; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; box-shadow: 0 2px 4px rgba(22, 101, 52, 0.2); transition: 0.2s;">
+                            <span>🔄</span> Switch / Manage Excel Sheets
+                        </button>
+                    </div>
+
+                    <div class="table-container" style="padding: 0; overflow: hidden; position: relative; flex: 1;">
+                        <div style="width: 100%; height: 100%; overflow: hidden; position: relative; background: white; border-radius: 8px;">
+                            <iframe id="excelIframe" src="about:blank" style="position: absolute; top: 0; left: 0; width: 125%; height: 125%; transform: scale(0.8); transform-origin: 0 0; border: none;"></iframe>
+                            
+                            <!-- 🌀 LOADING SCREEN OVERLAY -->
+                            <div id="excelLoadingOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; gap: 20px; transition: opacity 0.3s ease;">
+                                <div class="spinner" style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #722ed1; border-radius: 50%;"></div>
+                                <div style="font-family: 'Segoe UI', system-ui, sans-serif; text-align: center; padding: 0 20px;">
+                                    <h3 id="excelLoadingTitle" style="margin: 0; color: #722ed1; font-size: 18px; font-weight: 600;">Synchronizing WH Summary...</h3>
+                                    <p id="excelLoadingProgress" style="margin: 8px 0 0 0; color: #555; font-size: 14px; font-weight: 500;">Prepared to sync...</p>
+                                    <div style="width: 250px; height: 6px; background: #e8e8e8; border-radius: 3px; margin: 15px auto 0 auto; overflow: hidden; position: relative;">
+                                        <div id="excelLoadingBar" style="width: 0%; height: 100%; background: #722ed1; border-radius: 3px; transition: width 0.3s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-overall" class="dashboard-layout" style="display: none; flex-direction: column; gap: 15px; width: 100%; height: 100%;">
+                <div class="table-container" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; flex: 1; height: 100%; min-height: 0; box-sizing: border-box;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <button class="btn-primary" id="collectAllWoBtn" onclick="triggerCollectAllWOData()" style="background-color: #722ed1; color: white; display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 8px 18px; border-radius: 4px; font-size: 13px;">
+                                📊 Collect All WO Data
+                            </button>
+                            
+                            <!-- 🏭 MANUFACTURING LINE SELECTION PILLS -->
+                            <div id="mfgLineFilters" style="display: flex; align-items: center; gap: 8px; background: #fdfbf7; border: 1px solid #ffe7ba; padding: 4px 10px; border-radius: 6px; font-family: 'Segoe UI', system-ui, sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                <span style="font-size: 12px; font-weight: 700; color: #d46b08; margin-right: 4px; display: flex; align-items: center; gap: 4px;">🏭 Mfg Line:</span>
+                                <button class="mfg-line-pill active" onclick="toggleMfgLineFilter(this)" data-line="3070_WH" style="background: #fff2e8; border: 1px solid #ffbb96; color: #fa541c; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; outline: none; border-style: solid;">
+                                    ✓ 3070_WH
+                                </button>
+                                <button class="mfg-line-pill active" onclick="toggleMfgLineFilter(this)" data-line="3070_BB" style="background: #e6f7ff; border: 1px solid #91d5ff; color: #1890ff; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; outline: none; border-style: solid;">
+                                    ✓ 3070_BB
+                                </button>
+                                <button class="mfg-line-pill active" onclick="toggleMfgLineFilter(this)" data-line="3070_SI" style="background: #f6ffed; border: 1px solid #b7eb8f; color: #52c41a; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; outline: none; border-style: solid;">
+                                    ✓ 3070_SI
+                                </button>
+                            </div>
+
+                            <div id="overallDatesDisplay" style="font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; color: #555; font-weight: 500; display: flex; align-items: center; gap: 8px; background: #f5f5f5; padding: 6px 12px; border-radius: 4px; border: 1px solid #e8e8e8;">
+                                <span>📅 Start: <strong>Jan 1, 2025</strong></span>
+                                <span style="color: #ccc;">|</span>
+                                <span id="overallEndDateText">End: <strong>Today</strong></span>
+                            </div>
+                        </div>
+                        <div id="overallSyncStatus" style="font-size: 12px; font-weight: 500; color: #888; display: flex; align-items: center; gap: 12px;">
+                            <span id="overallCountdown" style="display: flex; align-items: center; gap: 4px;">⏱️ Next Auto-Update: <strong id="overallCountdownVal" style="color: #722ed1;">30:00</strong></span>
+                            
+                            <!-- ⚙️ Interval Selector Dropdown -->
+                            <div class="interval-select-wrapper" style="display: flex; align-items: center;">
+                                <select id="intervalSelect" class="interval-select-btn" onchange="handleIntervalChange(this.value)">
+                                    <option value="1">⏱️ 1 Min Interval</option>
+                                    <option value="3">⏱️ 3 Min Interval</option>
+                                    <option value="5">⏱️ 5 Min Interval</option>
+                                    <option value="15">⏱️ 15 Min Interval</option>
+                                    <option value="30" selected>⏱️ 30 Min Interval</option>
+                                    <option value="60">⏱️ 60 Min Interval</option>
+                                </select>
+                            </div>
+
+                            <!-- 🔍 Interactive Zoom Controls -->
+                            <div style="display: inline-flex; align-items: center; background: #ffffff; border: 1px solid #d9d9d9; border-radius: 6px; padding: 2px 6px; gap: 6px; font-size: 12px; font-weight: 600; color: #333; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <span style="color: #666; font-weight: 500;">Zoom:</span>
+                                <button type="button" onclick="adjustSpreadsheetZoom(-0.05)" title="Zoom Out" style="border: none; background: #f0f0f0; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-weight: bold; color: #1890ff; font-size: 13px;">-</button>
+                                <span id="spreadsheetZoomText" style="min-width: 36px; text-align: center; color: #1890ff; font-weight: 700;">75%</span>
+                                <button type="button" onclick="adjustSpreadsheetZoom(0.05)" title="Zoom In" style="border: none; background: #f0f0f0; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-weight: bold; color: #1890ff; font-size: 13px;">+</button>
+                            </div>
+                            
+                            <span style="color: #ddd;">|</span>
+                            <span id="overallSyncMessage">Not synced yet</span>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1; width: 100%; min-height: 0; border-radius: 8px; overflow: hidden; border: 1px solid #e8e8e8; position: relative; background: #fff;">
+                        <iframe id="overallSpreadsheetIframe" src="https://docs.google.com/spreadsheets/d/1oNuj3v3-KVyXDayxjPHYMhW6GJXBUoBwwVo__u0HLzI/edit?gid=0#gid=0" style="position: absolute; top: 0; left: 0; width: 133.33%; height: 133.33%; transform: scale(0.75); transform-origin: 0 0; border: none; display: block;"></iframe>
+                        
+                        <!-- 🌀 LOADING OVERLAY FOR OVERALL WO STATUS -->
+                        <div id="overallLoadingOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; gap: 20px; transition: opacity 0.3s ease;">
+                            <div class="spinner" style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #722ed1; border-radius: 50%;"></div>
+                            <div style="font-family: 'Segoe UI', system-ui, sans-serif; text-align: center; padding: 0 20px;">
+                                <h3 id="overallLoadingTitle" style="margin: 0; color: #722ed1; font-size: 18px; font-weight: 600;">Collecting All WO Data...</h3>
+                                <p id="overallLoadingProgress" style="margin: 8px 0 0 0; color: #555; font-size: 14px; font-weight: 500;">Connecting to MES Database...</p>
+                                <div style="width: 250px; height: 6px; background: #e8e8e8; border-radius: 3px; margin: 15px auto 0 auto; overflow: hidden; position: relative;">
+                                    <div id="overallLoadingBar" style="width: 0%; height: 100%; background: #722ed1; border-radius: 3px; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-manpower" class="dashboard-layout" style="display: none;">
+                <div class="table-container" style="margin: 0 auto; max-width: 1000px; padding: 25px 40px; box-sizing: border-box; height: fit-content; max-height: 100%; overflow-y: auto; scrollbar-width: thin;">
+                    <div class="table-header" style="border-left: 4px solid #722ed1; margin-bottom: 15px;">
+                        <h3 style="font-size: 18px;">Manpower Capacity Calculator</h3>
+                        <button class="btn-primary" style="background-color: #722ed1;" onclick="addManpowerRow()">+ Add Row</button>
+                    </div>
+                    <p style="font-size: 13px; color: #555; margin-bottom: 20px;">Input the specific day, how many people are working OT vs standard shifts, and compare total capacity against remaining Work Order hours.</p>
+                    
+                    <table class="compact-table" style="width: 100%; text-align: left; vertical-align: middle;">
+                        <thead>
+                            <tr>
+                                <th style="width: 12%;">Day</th>
+                                <th style="width: 12%; text-align: center;">People OT(10hr)</th>
+                                <th style="width: 12%; text-align: center;">People No OT(8hr)</th>
+                                <th style="width: 28%;">Target WOs (Comma separated)</th>
+                                <th style="width: 12%; text-align: center;">Remaining</th>
+                                <th style="width: 12%; text-align: center;">Achievable?</th>
+                                <th style="width: 12%; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manpowerTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-task" class="dashboard-layout" style="display: none; width: 100%; height: calc(100vh - 60px); justify-content: center; align-items: center; overflow: hidden; box-sizing: border-box; padding: 10px;">
+                <div id="exporterApp" class="table-container" style="margin: 0 auto; width: 100%; max-width: 900px; padding: 18px 24px; box-sizing: border-box; height: auto; max-height: calc(100vh - 80px); overflow: hidden; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 12px 32px rgba(15,23,42,0.08); display: flex; flex-direction: column; gap: 12px;">
+                    
+                    <!-- Header Banner -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">📑</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">Task Execution Report</h3>
+                                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: #64748b;">Query real-time database logs & generate formatted Excel execution reports</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="exporter-form" style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="hidden" id="authToken">
+
+                        <!-- Target Work Orders Card -->
+                        <div style="background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-weight: 800; font-size: 11px; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                                    <span>📋</span> Target Work Order(s) <span style="font-weight: 500; color: #64748b;">(Optional)</span>
+                                </label>
+                                <label style="font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #2563eb; background: #eff6ff; padding: 3px 8px; border-radius: 16px; border: 1px solid #bfdbfe; user-select: none;">
+                                    <input type="checkbox" id="useDateFilter" checked onchange="toggleDateFilter()" style="width: 13px; height: 13px; accent-color: #2563eb; cursor: pointer;">
+                                    Filter by Date Range
+                                </label>
+                            </div>
+                            <input type="text" id="taskWoInput" class="datetime-input" style="width: 100%; padding: 8px 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; font-family: monospace; outline: none; transition: all 0.2s ease;" placeholder="e.g. 4010745571, 4010731779 (Leave blank to query all WOs)" onfocus="this.style.borderColor='#2563eb'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                        </div>
+
+                        <!-- Manufacturing Line & Report Mode Filter Card -->
+                        <div style="background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Top Settings Row -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                                <!-- Base Line & Report Mode -->
+                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-weight: 800; font-size: 11px; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px;">Base Line:</span>
+                                        <select id="baseMfgLineSelect" onchange="updateMfgLineCheckboxes()" style="padding: 4px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px; font-weight: 700; color: #2563eb; background: #ffffff; cursor: pointer; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                            <option value="3070" selected>3070</option>
+                                            <option value="3060">3060</option>
+                                            <option value="ALL">ALL (3060 & 3070)</option>
+                                        </select>
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <label style="font-size: 11px; font-weight: 700; cursor: pointer; color: #334155; display: flex; align-items: center; gap: 5px; background: #ffffff; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; user-select: none;">
+                                            <input type="radio" name="taskReportMode" id="standardTaskRadio" value="standard" checked style="accent-color: #2563eb; margin: 0; cursor: pointer;"> Standard Task Report
+                                        </label>
+                                        <label style="font-size: 11px; font-weight: 700; cursor: pointer; color: #7c3aed; display: flex; align-items: center; gap: 5px; background: #f5f3ff; padding: 3px 8px; border-radius: 6px; border: 1px solid #ddd6fe; user-select: none;">
+                                            <input type="radio" name="taskReportMode" id="ethanTaskRadio" value="ethan" style="accent-color: #7c3aed; margin: 0; cursor: pointer;"> Ethan's Task
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Fetch All Lines Toggle -->
+                                <label style="font-size: 11px; font-weight: 700; cursor: pointer; color: #475569; display: flex; align-items: center; gap: 5px; user-select: none;">
+                                    <input type="checkbox" id="includeAllLines" onchange="toggleAllLines(this)" style="width: 13px; height: 13px; accent-color: #2563eb; cursor: pointer;"> Fetch All Lines
+                                </label>
+                            </div>
+
+                            <!-- Sub-Lines Checkbox Container -->
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-weight: 800; font-size: 10.5px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;">Target Sub-Lines:</span>
+                                <div id="mfgCheckboxContainer" style="display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; flex: 1;">
+                                    <label style="display: flex; align-items: center; gap: 5px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #0284c7; cursor: pointer; user-select: none;">
+                                        <input type="checkbox" class="mfg-line-filter" value="3070_WH" checked style="width: 13px; height: 13px; accent-color: #0284c7; cursor: pointer;"> 3070_WH
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #0284c7; cursor: pointer; user-select: none;">
+                                        <input type="checkbox" class="mfg-line-filter" value="3070_BB" checked style="width: 13px; height: 13px; accent-color: #0284c7; cursor: pointer;"> 3070_BB
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #0284c7; cursor: pointer; user-select: none;">
+                                        <input type="checkbox" class="mfg-line-filter" value="3070_SI" checked style="width: 13px; height: 13px; accent-color: #0284c7; cursor: pointer;"> 3070_SI
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Boundaries Card -->
+                        <div id="dateBoundariesWrapper" style="display: flex; gap: 12px; transition: opacity 0.3s; align-items: stretch; flex-wrap: wrap;">
+                            
+                            <!-- Quick Select -->
+                            <div style="width: 150px; display: flex; flex-direction: column; background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; z-index: 50; box-sizing: border-box;">
+                                <span style="font-weight: 800; font-size: 10.5px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Quick Select:</span>
+                                
+                                <div style="position: relative; width: 100%;">
+                                    <button id="quickSelectMainBtn" class="btn-toggle active" onclick="toggleQuickMenu(event)" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 700; font-size: 11.5px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                        <span id="quickSelectLabel">Today</span>
+                                        <span id="quickSelectIcon" style="font-size: 10px; color: #64748b;">▲</span>
+                                    </button>
+
+                                    <div id="quickSelectOptions" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 8px 24px rgba(15,23,42,0.15); flex-direction: column; gap: 2px; padding: 4px; margin-top: 4px; box-sizing: border-box; z-index: 100;">
+                                        <button class="btn-toggle" onclick="setQuickDate('today', 'Today')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Today</button>
+                                        <button class="btn-toggle" onclick="setQuickDate('yesterday', 'Yesterday')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Yesterday</button>
+                                        <button class="btn-toggle" onclick="setQuickDate('last3', 'Last 3 Days')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Last 3 Days</button>
+                                        <button class="btn-toggle" onclick="setQuickDate('last7', 'Last 7 Days')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Last 7 Days</button>
+                                        <button class="btn-toggle" onclick="setQuickDate('last14', 'Last 14 Days')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Last 14 Days</button>
+                                        <button class="btn-toggle" onclick="setQuickDate('lastMonth', 'Last Month')" style="width: 100%; text-align: left; border: none; background: transparent; padding: 6px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer;">Last Month</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Date & Time Pickers -->
+                            <div id="dateBoundaries" style="flex: 1; min-width: 280px; display: flex; gap: 12px; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 180px;">
+                                    <label style="font-weight: 800; font-size: 10.5px; display: block; margin-bottom: 4px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Start Boundary:</label>
+                                    <div style="display: flex; gap: 6px;">
+                                        <input type="date" id="startDate" class="datetime-input" style="flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px; font-weight: 600; outline: none; background: #ffffff;">
+                                        <input type="time" id="startTime" step="1" class="datetime-input" style="flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px; font-weight: 600; outline: none; background: #ffffff;">
+                                    </div>
+                                </div>
+                                <div style="flex: 1; min-width: 180px;">
+                                    <label style="font-weight: 800; font-size: 10.5px; display: block; margin-bottom: 4px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">End Boundary:</label>
+                                    <div style="display: flex; gap: 6px;">
+                                        <input type="date" id="endDate" class="datetime-input" style="flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px; font-weight: 600; outline: none; background: #ffffff;">
+                                        <input type="time" id="endTime" step="1" class="datetime-input" style="flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px; font-weight: 600; outline: none; background: #ffffff;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 12px; margin-top: 2px;" id="actionButtonsContainer">
+                            <button id="downloadBtn" class="btn-primary" style="flex: 1; padding: 10px 16px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; border-radius: 10px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.22); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='translateY(0)';" onclick="fetchAndProcess('excel')">📥 Generate & Download .XLSX</button>
+                            <button id="copyTaskBtn" class="btn-primary" style="flex: 1; padding: 10px 16px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); border: none; border-radius: 10px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.22); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='translateY(0)';" onclick="fetchAndProcess('copy')">📋 Copy Data to Clipboard</button>
+                            
+                            <button id="stopProcessBtn" class="btn-primary btn-danger" style="display: none; flex: 1; padding: 10px 16px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); border: none; border-radius: 10px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.22); transition: all 0.2s ease;" onclick="stopProcessing()">🛑 Stop Process & Save Data</button>
+                        </div>
+
+                        <div id="statusMessage" style="margin-top: 4px; font-weight: 700; text-align: center; padding: 8px; border-radius: 8px; font-size: 12px; transition: 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📡 Live Assembly Query panel (Disabled / Commented Out)
+            <div id="view-live-assembly" class="dashboard-layout" style="display: none; flex-direction: column; gap: 20px; width: 100%;">
+                <div class="table-container" style="margin: 0 auto; width: 100%; max-width: 1000px; padding: 25px 40px; box-sizing: border-box; height: fit-content; max-height: 100%; overflow-y: auto; scrollbar-width: thin; background: white; border-radius: 8px; border: 1px solid #e8e8e8; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div class="table-header" style="border-left: 4px solid #1890ff; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; padding-left: 10px;">
+                        <h3 style="font-size: 18px; margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 600; color: #001529;">Live Assembly View</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" style="background-color: #1890ff; border-radius: 4px; padding: 8px 16px; font-weight: 600;" onclick="queryLiveAssembly()">🔍 Query Live Data</button>
+                            <button id="liveExportBtn" class="btn-primary" style="background-color: #52c41a; border-radius: 4px; padding: 8px 16px; font-weight: 600; display: none;" onclick="exportLiveAssemblyToExcel()">📥 Export to Excel</button>
+                        </div>
+                    </div>
+                    <p style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5;">
+                        Configure query parameters below to fetch real-time assembly line status directly from the corporate live database.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px;">
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Name:</label>
+                            <input type="text" id="liveParamName" class="datetime-input" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #d9d9d9;" value="name">
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Location:</label>
+                            <select id="liveParamLocation" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #d9d9d9; background: white; outline: none; font-size: 13px; height: 35px; color: #000;">
+                                <option value="3070KA-F1-SI" selected>3070KA-F1-SI</option>
+                                <option value="3070SI-F1-SI">3070SI-F1-SI</option>
+                                <option value="3070KA-F2-SI">3070KA-F2-SI</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Data No:</label>
+                            <input type="text" id="liveParamDataNo" class="datetime-input" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #d9d9d9;" value="4">
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Factory:</label>
+                            <input type="text" id="liveParamFactory" class="datetime-input" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #d9d9d9;" value="3070">
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Section:</label>
+                            <input type="text" id="liveParamSection" class="datetime-input" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #d9d9d9;" value="Wireharness">
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 11px; display: block; margin-bottom: 5px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">Algorithm:</label>
+                            <input type="text" id="liveParamAlgorithm" class="datetime-input" style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 4px; border: 1px solid #d9d9d9;" value="TaskQty">
+                        </div>
+                    </div>
+
+                    <div id="liveQueryStatus" style="display: none; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 13px;"></div>
+
+                    <div id="liveTableContainer" style="display: none; max-height: 450px; overflow-y: auto; border: 1px solid #e8e8e8; border-radius: 6px;">
+                        <table id="liveAssemblyTable" class="compact-table nowrap-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+                            <thead style="background-color: #fafafa; position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th style="padding: 10px; border-bottom: 2px solid #e8e8e8; font-weight: bold;">Workstation</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #e8e8e8; font-weight: bold;">Status</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #e8e8e8; font-weight: bold;">Work Order / Details</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #e8e8e8; font-weight: bold;">Completion Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liveAssemblyBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            -->
+
+        </div>
+    </div>
+
+    <div id="chatbot-window">
+        <div class="chat-header">
+            <div><strong>🤖 Operations Assistant</strong></div>
+            <div style="cursor: pointer; font-size: 16px;" onclick="toggleChatbot()">✖</div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                Hi! I am your tracking assistant. I can search for Work Orders or organize your rack. How can I help?
+            </div>
+        </div>
+        <div class="chat-quick-replies">
+            <div class="quick-reply" onclick="sendQuickReply('Rank from most urgent')">🚀 Most Urgent</div>
+            <div class="quick-reply" onclick="sendQuickReply('Rank from highest Completion %')">📊 Highest Completion %</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Ask me something..." onkeypress="handleChatKeyPress(event)">
+            <button onclick="handleSendChat()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        function updateMfgLineCheckboxes() {
+            const baseLineSelect = document.getElementById('baseMfgLineSelect');
+            if (!baseLineSelect) return;
+            const baseLine = baseLineSelect.value;
+            const container = document.getElementById('mfgCheckboxContainer');
+            if (!container) return;
+            
+            let html = '';
+            const chipStyle = `display: flex; align-items: center; gap: 6px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #0284c7; cursor: pointer; user-select: none; transition: all 0.15s ease;`;
+
+            if (baseLine === 'ALL') {
+                const subLines3070 = ['3070_WH', '3070_BB', '3070_SI'];
+                const subLines3060 = ['3060_WH', '3060_BB', '3060_SI', '3060_PCB', '3060_SM', '3060_SMF'];
+                const allSubLines = [...subLines3070, ...subLines3060];
+                
+                html = allSubLines.map(line => `
+                    <label style="${chipStyle}" onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f9ff'">
+                        <input type="checkbox" class="mfg-line-filter" value="${line}" checked style="width: 14px; height: 14px; accent-color: #0284c7; cursor: pointer;"> ${line}
+                    </label>
+                `).join('');
+            } else {
+                let subLines = ['WH', 'BB', 'SI'];
+                if (baseLine === '3060') {
+                    subLines = ['WH', 'BB', 'SI', 'PCB', 'SM', 'SMF'];
+                }
+                html = subLines.map(sub => `
+                    <label style="${chipStyle}" onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f0f9ff'">
+                        <input type="checkbox" class="mfg-line-filter" value="${baseLine}_${sub}" checked style="width: 14px; height: 14px; accent-color: #0284c7; cursor: pointer;"> ${baseLine}_${sub}
+                    </label>
+                `).join('');
+            }
+            
+            container.innerHTML = html;
+            
+            // Reset "Fetch All Lines" state if checked
+            const fetchAllCheckbox = document.getElementById('includeAllLines');
+            if (fetchAllCheckbox && fetchAllCheckbox.checked) {
+                fetchAllCheckbox.checked = false;
+                toggleAllLines(fetchAllCheckbox);
+            }
+        }
+
+        function toggleWODropdown(event) {
+            if (event) event.stopPropagation(); 
+            const menu = document.getElementById('woChartDropdown');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+            }
+        }
+
+        function toggleDateFilter() {
+            const isChecked = document.getElementById('useDateFilter').checked;
+            const dateBox = document.getElementById('dateBoundariesWrapper'); 
+            if (isChecked) {
+                dateBox.style.opacity = "1";
+                dateBox.style.pointerEvents = "auto";
+            } else {
+                dateBox.style.opacity = "0.4";
+                dateBox.style.pointerEvents = "none";
+            }
+        }
+
+        function toggleAllLines(masterBox) {
+            const checkboxes = document.querySelectorAll('.mfg-line-filter');
+            checkboxes.forEach(cb => {
+                if (masterBox.checked) {
+                    cb.checked = true;
+                    cb.disabled = true;
+                    cb.parentElement.style.opacity = "0.5";
+                } else {
+                    cb.disabled = false;
+                    cb.parentElement.style.opacity = "1";
+                }
+            });
+        }
+
+        function toggleQuickMenu(event) {
+            if (event) event.stopPropagation(); 
+            const menu = document.getElementById('quickSelectOptions');
+            const icon = document.getElementById('quickSelectIcon');
+            
+            if (menu.style.display === 'none' || !menu.style.display) {
+                menu.style.display = 'flex';
+                icon.innerText = '▼'; 
+            } else {
+                menu.style.display = 'none';
+                icon.innerText = '▲'; 
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickSelectOptions');
+            const btn = document.getElementById('quickSelectMainBtn');
+            const icon = document.getElementById('quickSelectIcon');
+            
+            if (menu && menu.style.display === 'flex' && !btn.contains(event.target) && !menu.contains(event.target)) {
+                menu.style.display = 'none';
+                icon.innerText = '▲';
+            }
+
+            // For WO Chart Dropdown Menu
+            const woMenuWrapper = document.getElementById('woChartDropdownWrapper');
+            const woMenu = document.getElementById('woChartDropdown');
+            if (woMenuWrapper && woMenu && woMenu.style.display === 'block' && !woMenuWrapper.contains(event.target)) {
+                woMenu.style.display = 'none';
+            }
+
+            // 🚨 NEW: Closes the new Excel Switch Menu if clicking outside
+            const excelMenu = document.getElementById('excelSwitchMenu');
+            const excelBtn = document.getElementById('excelSwitchBtn');
+            if (excelMenu && excelMenu.style.display === 'flex' && !excelBtn.contains(event.target) && !excelMenu.contains(event.target)) {
+                excelMenu.style.transform = 'scale(0)';
+                setTimeout(() => excelMenu.style.display = 'none', 200);
+            }
+        });
+
+        function setQuickDate(preset, label) {
+            if (label) {
+                document.getElementById('quickSelectLabel').innerText = label;
+                document.getElementById('quickSelectOptions').style.display = 'none';
+                document.getElementById('quickSelectIcon').innerText = '▲';
+            }
+
+            const now = new Date();
+            let start = new Date(now);
+            let end = new Date(now);
+
+            if (preset === 'today') {
+                // Do nothing
+            } else if (preset === 'yesterday') {
+                start.setDate(start.getDate() - 1);
+                end.setDate(end.getDate() - 1);
+            } else if (preset === 'last3') {
+                start.setDate(start.getDate() - 2);
+            } else if (preset === 'last7') {
+                start.setDate(start.getDate() - 6);
+            } else if (preset === 'last14') {
+                start.setDate(start.getDate() - 13);
+            } else if (preset === 'lastMonth') {
+                start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                end = new Date(now.getFullYear(), now.getMonth(), 0);
+            }
+
+            const formatYMD = (d) => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+
+            document.getElementById('startDate').value = formatYMD(start);
+            document.getElementById('startTime').value = "00:00:00";
+            
+            document.getElementById('endDate').value = formatYMD(end);
+            document.getElementById('endTime').value = "23:59:59";
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setQuickDate('today', 'Today');
+        });
+    </script>
+
+    <!-- 📊 EXCEL SWITCHER MODAL -->
+    <div id="excelSwitchModal" onclick="if(event.target === this) toggleExcelSwitch()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 999999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 520px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(4, 120, 87, 0.3), 0 0 0 1px rgba(16, 185, 129, 0.2); overflow: hidden; font-family: 'Plus Jakarta Sans', Inter, sans-serif; animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.15);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="background: rgba(255,255,255,0.22); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);">📊</div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px;">Excel Sheet Switcher</h3>
+                        <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #d1fae5; font-weight: 500;">Switch spreadsheets or add a custom Google Sheet URL</p>
+                    </div>
+                </div>
+                <button onclick="toggleExcelSwitch()" class="modal-close-btn" title="Close Modal">✕</button>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 22px; display: flex; flex-direction: column; gap: 18px; background: #ffffff;">
+                
+                <!-- Add New Sheet Card -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 16px; border-radius: 14px; border: 1px solid #a7f3d0; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 2px rgba(255,255,255,0.8), 0 2px 8px rgba(16,185,129,0.06);">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 14px;">✨</span>
+                        <h4 style="margin: 0; color: #065f46; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px;">Add Custom Google Sheet</h4>
+                    </div>
+                    <input type="text" id="customExcelName" style="width: 100%; padding: 10px 14px; border: 1px solid #6ee7b7; border-radius: 10px; font-size: 12px; outline: none; box-sizing: border-box; background: #ffffff; color: #0f172a; font-weight: 600; transition: all 0.2s ease;" placeholder="Sheet Name (e.g. Master Tracker)">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="customExcelUrl" style="flex: 1; padding: 10px 14px; border: 1px solid #6ee7b7; border-radius: 10px; font-size: 12px; outline: none; box-sizing: border-box; background: #ffffff; color: #0f172a; font-weight: 600; transition: all 0.2s ease;" placeholder="Paste Google Sheet URL">
+                        <button style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 10px 18px; font-weight: 800; font-size: 12px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); white-space: nowrap;" onclick="addExcelToInventory()" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(5, 150, 105, 0.35)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(5, 150, 105, 0.25)';">+ Add Sheet</button>
+                    </div>
+                </div>
+
+                <!-- Saved Sheets List -->
+                <div>
+                    <h4 style="margin: 0 0 12px 0; color: #475569; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px;">Select Spreadsheet to View</h4>
+                    <div id="excelInventoryList" style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; padding-right: 2px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📊 CHART DETAIL BREAKDOWN MODAL -->
+    <div id="chartDetailModal" onclick="if(event.target === this) closeChartModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.65); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="chart-modal-card" style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 1000px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.2); overflow: hidden; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;">
+            
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 13px 20px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 11px;">
+                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">📊</div>
+                    <div>
+                        <h3 id="chartModalTitle" style="margin: 0; font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px;">Chart Detail Breakdown</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">Detailed container and work order records inspection</p>
+                    </div>
+                </div>
+                <button onclick="closeChartModal()" class="chart-modal-close-btn" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; width: 34px; height: 34px; border-radius: 50%; font-size: 20px; font-weight: 300; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="Close Breakdown">&times;</button>
+            </div>
+
+            <!-- Summary Stat Cards -->
+            <div style="padding: 13px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; flex-shrink: 0;">
+                <div class="chart-stat-card" style="background: #ffffff; padding: 11px 14px; border-radius: 9px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.4px; display: flex; align-items: center; gap: 4px;">📌 SPEC NAME</span>
+                    <div id="chartModalSpec" style="font-weight: 800; color: #2563eb; font-size: 14px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+                </div>
+                <div class="chart-stat-card" style="background: #ffffff; padding: 11px 14px; border-radius: 9px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.4px; display: flex; align-items: center; gap: 4px;">🏭 LINE / FILTER</span>
+                    <div id="chartModalLine" style="font-weight: 800; color: #059669; font-size: 14px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+                </div>
+                <div class="chart-stat-card" style="background: #ffffff; padding: 11px 14px; border-radius: 9px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <span style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.4px; display: flex; align-items: center; gap: 4px;">📦 TOTAL QUANTITY</span>
+                    <div id="chartModalQty" style="font-weight: 800; color: #7c3aed; font-size: 14px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div>
+                </div>
+            </div>
+
+            <!-- Table Container: only the table scrolls, so the header row can stay pinned -->
+            <div class="chart-modal-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-shrink: 0;">
+                    <h4 style="margin: 0; font-size: 13px; font-weight: 800; color: #1e293b;">Associated Records</h4>
+                    <span style="font-size: 11px; font-weight: 800; background: #eff6ff; color: #2563eb; padding: 3px 10px; border-radius: 20px;">
+                        <span id="chartModalRecordCount">0</span> records
+                    </span>
+                </div>
+
+                <div class="chart-modal-table-scroll">
+                    <table class="chart-modal-table">
+                        <thead>
+                            <tr>
+                                <th class="chart-modal-col-topmfg" title="Top parent / bundle manufacturing order">TopMFG</th>
+                                <th class="chart-modal-col-wo">WO Number</th>
+                                <th>Mfg Line</th>
+                                <th>Traveler Card</th>
+                                <th>Part Number</th>
+                                <th>Task List</th>
+                                <th class="chart-modal-col-qty">Order Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chartModalTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Space Background Animation Engine -->
+    <script>
+        (function initSpaceBackground() {
+            const canvas = document.getElementById('spaceCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let width, height;
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // 1. Glowing Stars of Different Sizes moving in Random Directions
+            const stars = [];
+            for (let i = 0; i < 220; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 0.35 + 0.1;
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 2.8 + 0.6,
+                    alpha: Math.random(),
+                    twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: ['#ffffff', '#bae6fd', '#fef08a', '#e0e7ff', '#fbcfe8'][Math.floor(Math.random() * 5)]
+                });
+            }
+
+            // 2. Celestial Planets moving slowly from Right to Left
+            const planets = [
+                { type: 'sun', x: width + 100, y: height * 0.18, radius: 55, speed: 0.25, time: 0 },
+                { type: 'earth', x: width + 400, y: height * 0.72, radius: 42, speed: 0.3, rotation: 0 },
+                { type: 'moon', x: width + 550, y: height * 0.65, radius: 18, speed: 0.3, rotation: 0 },
+                { type: 'saturn', x: width + 850, y: height * 0.28, radius: 36, speed: 0.22, ringAngle: 0.4 },
+                { type: 'purple', x: width + 1150, y: height * 0.82, radius: 32, speed: 0.35 },
+                { type: 'mars', x: width + 1450, y: height * 0.42, radius: 26, speed: 0.28 }
+            ];
+
+            // 3. Black Holes moving slowly Up and Down
+            const blackHoles = [
+                { baseY: height * 0.35, x: width * 0.18, radius: 30, speed: 0.008, phase: 0, time: 0 },
+                { baseY: height * 0.68, x: width * 0.82, radius: 25, speed: 0.006, phase: Math.PI, time: 0 }
+            ];
+
+            // 4. Cute Floating Astronaut
+            const astronaut = {
+                x: width * 0.12,
+                y: height * 0.5,
+                vx: 0.15,
+                vy: 0.1,
+                radius: 24,
+                rotation: 0,
+                rotSpeed: 0.008,
+                floatPhase: 0
+            };
+
+            // 5. Shooting Stars (Meteors)
+            const shootingStars = [];
+            function createShootingStar() {
+                shootingStars.push({
+                    x: Math.random() * width * 1.2 - width * 0.2,
+                    y: Math.random() * height * 0.4,
+                    length: Math.random() * 140 + 90,
+                    speed: Math.random() * 9 + 7,
+                    angle: Math.PI / 4,
+                    alpha: 1,
+                    decay: Math.random() * 0.015 + 0.008,
+                    thickness: Math.random() * 1.8 + 1.2
+                });
+            }
+            let lastShootingStarTime = Date.now();
+
+            // Interactive mouse movement for 3D card tilt
+            const authCard = document.querySelector('.auth-card');
+            if (authCard) {
+                document.addEventListener('mousemove', (e) => {
+                    const loginScreen = document.getElementById('globalLoginScreen');
+                    if (!loginScreen || loginScreen.style.display === 'none') return;
+                    const cx = window.innerWidth / 2;
+                    const cy = window.innerHeight / 2;
+                    const dx = (e.clientX - cx) / cx;
+                    const dy = (e.clientY - cy) / cy;
+                    authCard.style.transform = `translateY(${Math.sin(Date.now() * 0.002) * 6}px) rotateY(${dx * 12}deg) rotateX(${-dy * 12}deg)`;
+                });
+            }
+
+            function drawSun(p) {
+                p.time += 0.02;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                // Corona Aura
+                const corona = ctx.createRadialGradient(0, 0, p.radius * 0.8, 0, 0, p.radius * 2.2);
+                corona.addColorStop(0, 'rgba(253, 224, 71, 0.8)');
+                corona.addColorStop(0.4, 'rgba(245, 158, 11, 0.4)');
+                corona.addColorStop(1, 'rgba(217, 119, 6, 0)');
+                ctx.fillStyle = corona;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 2.2 + Math.sin(p.time) * 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Sun Body
+                const sunGrad = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.1, 0, 0, p.radius);
+                sunGrad.addColorStop(0, '#ffffff');
+                sunGrad.addColorStop(0.3, '#fef08a');
+                sunGrad.addColorStop(0.7, '#f59e0b');
+                sunGrad.addColorStop(1, '#b45309');
+                ctx.fillStyle = sunGrad;
+                ctx.shadowColor = '#f59e0b';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+            }
+
+            function drawEarth(p) {
+                p.rotation += 0.005;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                // Atmosphere Glow Outline
+                const atmo = ctx.createRadialGradient(0, 0, p.radius * 0.9, 0, 0, p.radius * 1.3);
+                atmo.addColorStop(0, 'rgba(56, 189, 248, 0.6)');
+                atmo.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                ctx.fillStyle = atmo;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 1.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ocean Base
+                const ocean = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.2, 0, 0, p.radius);
+                ocean.addColorStop(0, '#38bdf8');
+                ocean.addColorStop(0.5, '#0284c7');
+                ocean.addColorStop(1, '#0f172a');
+                ctx.fillStyle = ocean;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Continents (clip to sphere)
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.clip();
+
+                ctx.fillStyle = '#10b981';
+                // Green landmasses
+                ctx.beginPath();
+                ctx.arc(-12 + Math.sin(p.rotation) * 8, -10, 14, 0, Math.PI * 2);
+                ctx.arc(10 + Math.sin(p.rotation) * 8, 8, 16, 0, Math.PI * 2);
+                ctx.arc(-8 + Math.sin(p.rotation) * 8, 14, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // White Swirling Cloud Layer
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.beginPath();
+                ctx.arc(-5 - Math.sin(p.rotation * 1.5) * 10, -18, 18, 0, Math.PI * 2);
+                ctx.arc(8 - Math.sin(p.rotation * 1.5) * 10, -2, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+                ctx.restore();
+            }
+
+            function drawMoon(p) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                const moonGrad = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.1, 0, 0, p.radius);
+                moonGrad.addColorStop(0, '#f8fafc');
+                moonGrad.addColorStop(0.6, '#94a3b8');
+                moonGrad.addColorStop(1, '#334155');
+                ctx.fillStyle = moonGrad;
+                ctx.shadowColor = '#e2e8f0';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Moon Craters
+                ctx.fillStyle = 'rgba(51, 65, 85, 0.5)';
+                ctx.beginPath();
+                ctx.arc(-p.radius * 0.3, -p.radius * 0.2, p.radius * 0.22, 0, Math.PI * 2);
+                ctx.arc(p.radius * 0.2, p.radius * 0.3, p.radius * 0.18, 0, Math.PI * 2);
+                ctx.arc(p.radius * 0.35, -p.radius * 0.1, p.radius * 0.12, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function drawSaturn(p) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                // Back Rings
+                ctx.save();
+                ctx.rotate(0.35);
+                ctx.scale(1, 0.32);
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 2.2, Math.PI, Math.PI * 2);
+                ctx.lineWidth = 14;
+                ctx.strokeStyle = 'rgba(253, 230, 138, 0.75)';
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 1.6, Math.PI, Math.PI * 2);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
+                ctx.stroke();
+                ctx.restore();
+
+                // Gas Giant Planet Body
+                const satGrad = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.1, 0, 0, p.radius);
+                satGrad.addColorStop(0, '#fef08a');
+                satGrad.addColorStop(0.4, '#f97316');
+                satGrad.addColorStop(0.8, '#c2410c');
+                satGrad.addColorStop(1, '#431407');
+                ctx.fillStyle = satGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Front Rings
+                ctx.save();
+                ctx.rotate(0.35);
+                ctx.scale(1, 0.32);
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 2.2, 0, Math.PI);
+                ctx.lineWidth = 14;
+                ctx.strokeStyle = 'rgba(253, 230, 138, 0.85)';
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 1.6, 0, Math.PI);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = 'rgba(249, 115, 22, 0.7)';
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.restore();
+            }
+
+            function drawPurplePlanet(p) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                const purpleGrad = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.1, 0, 0, p.radius);
+                purpleGrad.addColorStop(0, '#f0abfc');
+                purpleGrad.addColorStop(0.5, '#a855f7');
+                purpleGrad.addColorStop(1, '#3b0764');
+                ctx.fillStyle = purpleGrad;
+                ctx.shadowColor = '#c084fc';
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Neon Ring
+                ctx.save();
+                ctx.rotate(-0.4);
+                ctx.scale(1, 0.28);
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius * 1.9, 0, Math.PI * 2);
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.restore();
+            }
+
+            function drawMars(p) {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+
+                const marsGrad = ctx.createRadialGradient(-p.radius * 0.3, -p.radius * 0.3, p.radius * 0.1, 0, 0, p.radius);
+                marsGrad.addColorStop(0, '#fca5a5');
+                marsGrad.addColorStop(0.5, '#ef4444');
+                marsGrad.addColorStop(1, '#7f1d1d');
+                ctx.fillStyle = marsGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Polar Ice Cap
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, -p.radius * 0.75, p.radius * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function drawBlackHole(bh) {
+                bh.time += bh.speed;
+                const currentY = bh.baseY + Math.sin(bh.time * 2) * 35;
+                ctx.save();
+                ctx.translate(bh.x, currentY);
+
+                // Gravitational Accretion Disk Swirl
+                for (let r = bh.radius * 2.8; r > bh.radius; r -= 3) {
+                    ctx.save();
+                    ctx.rotate(bh.time * 3 + r * 0.05);
+                    ctx.scale(1, 0.4);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r, 0, Math.PI * 2);
+                    const alpha = (r - bh.radius) / (bh.radius * 1.8);
+                    ctx.strokeStyle = (r % 6 === 0) ? `rgba(56, 189, 248, ${0.7 * alpha})` : `rgba(168, 85, 247, ${0.5 * alpha})`;
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Event Horizon (Pitch Black Center)
+                ctx.beginPath();
+                ctx.arc(0, 0, bh.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#000000';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 20;
+                ctx.fill();
+
+                // Gravitational Photon Lensing Ring
+                ctx.beginPath();
+                ctx.arc(0, 0, bh.radius * 1.08, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+            }
+
+            function drawAstronaut(astro) {
+                astro.floatPhase += 0.02;
+                astro.rotation += astro.rotSpeed;
+                astro.x += astro.vx;
+                astro.y += Math.sin(astro.floatPhase) * 0.3;
+
+                if (astro.x > width + 80) astro.x = -80;
+                if (astro.y > height + 80) astro.y = -80;
+                if (astro.y < -80) astro.y = height + 80;
+
+                ctx.save();
+                ctx.translate(astro.x, astro.y);
+                ctx.rotate(astro.rotation);
+
+                // Safety Tether Cord waving in space
+                ctx.beginPath();
+                ctx.moveTo(-20, 10);
+                ctx.bezierCurveTo(-50, 30 + Math.sin(astro.floatPhase) * 15, -80, -20 + Math.cos(astro.floatPhase) * 20, -120, 10);
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Jetpack Thruster Blue Particles
+                ctx.beginPath();
+                ctx.arc(-18, 12 + Math.sin(astro.floatPhase * 3) * 2, 4, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.8)';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Jetpack
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(-22, -12, 10, 24);
+
+                // Spacesuit Body
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath();
+                ctx.arc(0, 2, 14, 0, Math.PI * 2); // Torso
+                ctx.fill();
+
+                // Arms & Legs (Cute rounded suit)
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.arc(-10, -6, 6, 0, Math.PI * 2); // Left arm
+                ctx.arc(10, 8, 6, 0, Math.PI * 2);  // Right arm
+                ctx.arc(-6, 16, 6, 0, Math.PI * 2); // Left leg
+                ctx.arc(6, 16, 6, 0, Math.PI * 2);  // Right leg
+                ctx.fill();
+
+                // Helmet
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, -12, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Gold Reflective Glass Visor
+                const visorGrad = ctx.createLinearGradient(-6, -16, 6, -8);
+                visorGrad.addColorStop(0, '#fde047');
+                visorGrad.addColorStop(0.5, '#f59e0b');
+                visorGrad.addColorStop(1, '#0284c7');
+                ctx.fillStyle = visorGrad;
+                ctx.beginPath();
+                ctx.arc(1, -12, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Visor Shine Reflection
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(-2, -15, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function render() {
+                const loginScreen = document.getElementById('globalLoginScreen');
+                if (loginScreen && loginScreen.style.display === 'none') {
+                    requestAnimationFrame(render);
+                    return;
+                }
+
+                ctx.clearRect(0, 0, width, height);
+
+                // Deep Cosmic Radial Void Background
+                const bgGrad = ctx.createRadialGradient(width / 2, height / 2, 80, width / 2, height / 2, Math.max(width, height));
+                bgGrad.addColorStop(0, '#0f172a');
+                bgGrad.addColorStop(0.5, '#070a14');
+                bgGrad.addColorStop(1, '#020408');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                // 1. Render Black Holes in Deep Background
+                blackHoles.forEach(bh => drawBlackHole(bh));
+
+                // 2. Render Glowing Stars Moving in Random Directions
+                stars.forEach(s => {
+                    s.alpha += s.twinkleSpeed;
+                    if (s.alpha > 1 || s.alpha < 0.2) s.twinkleSpeed = -s.twinkleSpeed;
+                    s.x += s.vx;
+                    s.y += s.vy;
+
+                    // Wrap around screen edges seamlessly
+                    if (s.x > width) s.x = 0;
+                    if (s.x < 0) s.x = width;
+                    if (s.y > height) s.y = 0;
+                    if (s.y < 0) s.y = height;
+
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = s.color;
+                    ctx.globalAlpha = Math.abs(s.alpha);
+                    ctx.shadowColor = s.color;
+                    ctx.shadowBlur = s.radius * 3;
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                    ctx.shadowBlur = 0;
+                });
+
+                // 3. Render Planets Moving Slowly from Right to Left
+                planets.forEach(p => {
+                    p.x -= p.speed;
+                    // Wrap around when exiting left
+                    if (p.x < -p.radius * 3) {
+                        p.x = width + Math.random() * 300 + 100;
+                        p.y = Math.random() * (height * 0.75) + height * 0.12;
+                    }
+
+                    if (p.type === 'sun') drawSun(p);
+                    else if (p.type === 'earth') drawEarth(p);
+                    else if (p.type === 'moon') drawMoon(p);
+                    else if (p.type === 'saturn') drawSaturn(p);
+                    else if (p.type === 'purple') drawPurplePlanet(p);
+                    else if (p.type === 'mars') drawMars(p);
+                });
+
+                // 4. Render Cute Floating Astronaut
+                drawAstronaut(astronaut);
+
+                // 5. Spawn & Render Meteors / Shooting Stars
+                if (Date.now() - lastShootingStarTime > Math.random() * 2000 + 1200) {
+                    createShootingStar();
+                    lastShootingStarTime = Date.now();
+                }
+
+                for (let i = shootingStars.length - 1; i >= 0; i--) {
+                    const ss = shootingStars[i];
+                    const endX = ss.x + Math.cos(ss.angle) * ss.length;
+                    const endY = ss.y + Math.sin(ss.angle) * ss.length;
+
+                    const grad = ctx.createLinearGradient(ss.x, ss.y, endX, endY);
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${ss.alpha})`);
+                    grad.addColorStop(0.2, `rgba(56, 189, 248, ${ss.alpha * 0.9})`);
+                    grad.addColorStop(0.6, `rgba(129, 140, 248, ${ss.alpha * 0.4})`);
+                    grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+                    ctx.beginPath();
+                    ctx.moveTo(ss.x, ss.y);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = ss.thickness;
+                    ctx.stroke();
+
+                    // Glowing meteor head
+                    ctx.beginPath();
+                    ctx.arc(ss.x, ss.y, ss.thickness * 1.3, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${ss.alpha})`;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ss.x += Math.cos(ss.angle) * ss.speed;
+                    ss.y += Math.sin(ss.angle) * ss.speed;
+                    ss.alpha -= ss.decay;
+
+                    if (ss.alpha <= 0 || ss.x > width + 200 || ss.y > height + 200) {
+                        shootingStars.splice(i, 1);
+                    }
+                }
+
+                requestAnimationFrame(render);
+            }
+
+            render();
+        })();
+    </script>
+</body>
+</html>

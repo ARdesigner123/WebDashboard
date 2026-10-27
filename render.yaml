@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: operations-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python backend/manage.py migrate --run-syncdb --noinput && gunicorn --chdir backend backend.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "0"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: operations-dashboard-db
+          property: connectionString
+
+databases:
+  - name: operations-dashboard-db
+    databaseName: operations_dashboard
+    user: operations_dashboard
+    plan: free
